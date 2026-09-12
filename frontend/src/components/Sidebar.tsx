@@ -371,6 +371,18 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
 
           <NavItem
+            icon={<FileText size={18} />}
+            label="年报分析"
+            testId="sidebar-nav-annual-reports"
+            active={activeTab === 'annual-reports'}
+            onClick={() => {
+              setActiveTab('annual-reports');
+              navigate('/annual-reports');
+              onMobileClose?.();
+            }}
+          />
+
+          <NavItem
             icon={<Command size={18} />}
             label="命令面板"
             testId="sidebar-nav-command-palette"
