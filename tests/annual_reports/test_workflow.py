@@ -1,5 +1,6 @@
 """Behavioral tests for document boundaries, graph routes, and financial arithmetic."""
 import json
+import re
 
 import pytest
 
@@ -7,12 +8,16 @@ from backend.annual_reports import workflow
 
 
 class FakeStore:
-    def __init__(self, texts=None, *, search_override=None):
+    def __init__(self, texts=None, *, search_override=None, bind_year=True):
         self.documents = {}
         self.hits = []
         self.calls = []
         self.search_override = search_override
         for year, text in (texts or {}).items():
+            if bind_year:
+                # Most fixtures are prose statements; make their source years explicit.
+                text = "\n".join(f"{year}年{line}" if re.match(r"(?:营业收入|归母净利润|经营活动产生的现金流量净额)", line)
+                                 and not re.search(r"(?:19|20)\d{2}年", line) else line for line in text.splitlines())
             key = str(year)
             self.documents[key] = {"id": key, "filename": f"示例公司{year}年报.pdf", "company": "示例公司",
                                    "year": year, "page_count": 30, "chunk_count": 1, "warnings": []}
@@ -55,7 +60,7 @@ def test_real_graph_runs_all_nodes_without_supplement_when_sufficient():
 
 def test_supplement_can_find_missing_year_then_stops():
     def search(store, query, ids, years):
-        return [hit for hit in store.hits if hit["year"] in years and (hit["year"] == 2022 or query == "营业收入")]
+        return [hit for hit in store.hits if (not years or hit["year"] in years) and (hit["year"] == 2022 or query == "营业收入")]
     result = run(FakeStore({2022: "营业收入：1亿元", 2023: "营业收入：2亿元"}, search_override=search))
     assert result["status"] == "complete"
     assert result["metrics"]["retries"] == 1
@@ -69,7 +74,7 @@ def test_empty_results_refuse_and_retry_count_is_bounded():
     assert result["status"] == "insufficient_evidence"
     assert result["citations"] == [] and result["calculations"] == []
     assert result["metrics"]["retries"] == 3
-    assert len(store.calls) == 8
+    assert len(store.calls) == 5
     assert "没有检索到" in result["answer"]
 
 
@@ -81,13 +86,13 @@ def test_unavailable_selection_fails_closed_without_search(selection):
     assert store.calls == []
 
 
-def test_explicit_years_override_filter_and_missing_year_is_not_invented():
+def test_api_year_filter_remains_hard_boundary_and_question_year_is_not_invented():
     store = FakeStore({2021: "营业收入：10亿元", 2023: "营业收入：30亿元"})
     result = run(store, years=[2021])
     assert result["status"] == "insufficient_evidence"
-    assert result["metrics"]["missing_years"] == [2022]
-    assert {tuple(call["years"]) for call in store.calls} == {(2022,), (2023,)}
-    assert {hit["year"] for hit in result["citations"]} == {2023}
+    assert result["metrics"]["missing_years"] == [2022, 2023]
+    assert {tuple(call["years"]) for call in store.calls} == {(2021,)}
+    assert {hit["year"] for hit in result["citations"]} == {2021}
     assert result["calculations"] == []
 
 
@@ -310,3 +315,88 @@ def test_invalid_options_do_not_start_retrieval(kwargs):
     with pytest.raises(ValueError):
         run(store, "营业收入", **kwargs)
     assert store.calls == []
+
+
+MIDEA_FLAT_TABLE = """六、主要会计数据和财务指标
+公司是否需追溯调整或重述以前年度会计数据
+□ 是 √ 否
+2024年 2023年 本年比上年增减 2022年
+营业收入（千元） 407,149,600 372,037,280 9.44% 343,917,531
+归属于上市公司股东的净利润（千元） 38,537,237 33,719,935 14.29% 29,553,507
+经营活动产生的现金流量净额（千元） 60,511,572 57,902,611 4.51% 34,657,828
+"""
+
+
+def test_real_flat_annual_table_skips_ratio_column_and_covers_prior_factual_years():
+    store = FakeStore({2024: MIDEA_FLAT_TABLE}, bind_year=False)
+    result = run(store, "比较2022至2024年营业收入、归母净利润和经营现金流")
+    assert result["status"] == "complete", result["metrics"]["evidence_gaps"]
+    assert result["metrics"]["missing_years"] == []
+    assert len(result["calculations"]) == 6
+    latest_revenue = next(c for c in result["calculations"] if c["metric"] == "营业收入" and c["to_year"] == 2024)
+    assert latest_revenue["to_value"] == "407149600000"
+    assert latest_revenue["change_pct"] == 9.44
+    assert result["citations"][0]["year"] == 2024
+    assert all(op["document_id"] == "2024" for op in latest_revenue["operands"])
+
+
+def test_prior_year_question_can_supplement_from_newer_selected_report():
+    store = FakeStore({2024: MIDEA_FLAT_TABLE}, bind_year=False)
+    result = run(store, "2023年营业收入是多少")
+    assert result["status"] == "complete"
+    assert result["metrics"]["retries"] == 1
+    assert store.calls[0]["years"] == [2023]
+    assert store.calls[1]["years"] is None
+    assert result["metrics"]["requested_years"] == [2023]
+    assert "3,720.3728亿元" in result["answer"]
+    assert result["citations"][0]["year"] == 2024
+
+
+def test_explicit_document_filter_cannot_be_relaxed_by_supplement():
+    store = FakeStore({2024: MIDEA_FLAT_TABLE}, bind_year=False)
+    result = run(store, "2023年营业收入是多少", years=[2023])
+    assert result["status"] == "insufficient_evidence"
+    assert all(call["years"] == [2023] for call in store.calls)
+    assert result["citations"] == []
+
+
+def test_unlabeled_year_cannot_be_inferred_from_report_metadata():
+    result = run(FakeStore({2023: "营业收入：1亿元"}, bind_year=False), "2023年营业收入")
+    assert result["status"] == "insufficient_evidence"
+    assert result["metrics"]["fact_count"] == 0
+
+
+def test_wrong_directional_premise_is_explicitly_corrected():
+    store = FakeStore({2024: MIDEA_FLAT_TABLE + "2024年经营现金流增加主要系回款增加。"}, bind_year=False)
+    result = run(store, "为什么2024年经营现金流下降")
+    assert result["status"] == "insufficient_evidence"
+    assert result["calculations"][0]["change_pct"] == 4.51
+    assert any("问题前提与证据不符" in gap and "实际增加" in gap for gap in result["metrics"]["evidence_gaps"])
+    assert result["trace"][-2]["status"] == "contradiction"
+
+
+def test_reasons_from_newer_year_cannot_explain_older_year():
+    store = FakeStore({2024: MIDEA_FLAT_TABLE + "2024年经营现金流增加主要系回款增加。"}, bind_year=False)
+    result = run(store, "为什么2023年经营现金流增长")
+    assert result["status"] == "insufficient_evidence"
+    assert any("2023年原文" in gap for gap in result["metrics"]["evidence_gaps"])
+
+
+@pytest.mark.parametrize("row", [
+    "2023年营业收入：100万元（调整前）；2023年120万元（调整后）",
+    "营业收入（万元）：2023年9.44%；2022年10%",
+    "2023年家电营业收入：100万元",
+    "项目 | 2023年 | 2022年 | 同比增减\n营业收入（万元） | 120 | 100 | 20",
+])
+def test_ambiguous_adjustments_ratios_and_segments_are_not_amounts(row):
+    result = run(FakeStore({2023: row}, bind_year=False), "2023年营业收入是多少")
+    assert result["status"] == "insufficient_evidence"
+    assert result["metrics"]["fact_count"] == 0
+
+
+@pytest.mark.parametrize("mode,canonical", [("bm25", "bm25"), ("keyword", "bm25"), ("vector", "semantic"), ("semantic", "semantic")])
+def test_retrieval_mode_names_match_store_contract(mode, canonical):
+    store = FakeStore({2023: "2023年营业收入：100万元"})
+    result = run(store, "2023年营业收入", mode=mode)
+    assert result["status"] == "complete"
+    assert all(call["mode"] == canonical for call in store.calls)

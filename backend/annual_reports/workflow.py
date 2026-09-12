@@ -28,6 +28,7 @@ class AnalysisState(TypedDict, total=False):
     question: str
     document_ids: list[str]
     documents: dict[str, dict[str, Any]]
+    document_years: list[int]
     years: list[int]
     metric_names: list[str]
     comparative: bool
@@ -57,9 +58,10 @@ METRICS = {
 }
 UNIT_SCALE = {"元": Decimal(1), "千元": Decimal(1000), "万元": Decimal(10000),
               "百万元": Decimal(1000000), "亿元": Decimal(100000000)}
-YEAR_RE = re.compile(r"(?<!\d)((?:19|20)\d{2})(?:\s*年)?")
+YEAR_RE = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)(?:\s*年)?")
 NUMBER = r"[+\-−－]?(?:\d{1,3}(?:[,，]\d{3})+|\d+)(?:\.\d+)?"
 VALUE_RE = re.compile(rf"(?P<open>[（(])?\s*(?P<number>{NUMBER})\s*(?P<unit>百万元|亿元|万元|千元|元)?\s*(?P<close>[）)])?\s*(?P<unit_after>百万元|亿元|万元|千元|元)?")
+ROW_CELL_RE = re.compile(VALUE_RE.pattern + r"(?P<percent>[%％])?")
 UNIT_RE = re.compile(r"(?:单位\s*[:：]?\s*(?:人民币)?\s*|[（(]\s*(?:人民币)?\s*)(百万元|亿元|万元|千元|元)")
 CAUSAL_RE = re.compile(r"主要(?:原因|系|是|由于)|原因(?:是|为|如下)|由于|导致|所致|受.{0,18}影响")
 
@@ -74,7 +76,7 @@ def _years_in_question(question: str) -> list[int]:
         start, end = map(int, match.groups())
         if 0 < end - start <= 10:
             years.update(range(start, end + 1))
-    if "同比" in question and len(years) == 1:
+    if re.search(r"同比|增长|下降|增加|减少|上涨|降低|回落", question) and len(years) == 1:
         years.add(next(iter(years)) - 1)
     return sorted(years)
 
@@ -84,6 +86,24 @@ def _metric_names(question: str) -> list[str]:
     if "收入" in question and "营业收入" not in result:
         result.insert(0, "营业收入")
     return result
+
+
+def _requested_directions(question: str) -> dict[str, int]:
+    """Read explicit directional premises next to metric names, excluding negated questions."""
+    alias_to_metric = {alias: metric for metric, aliases in METRICS.items() for alias in aliases}
+    alias_to_metric["收入"] = "营业收入"
+    names = list(re.finditer("|".join(map(re.escape, sorted(alias_to_metric, key=len, reverse=True))), question))
+    directions: dict[str, int] = {}
+    for index, match in enumerate(names):
+        end = names[index + 1].start() if index + 1 < len(names) else len(question)
+        tail = question[match.end():end]
+        if re.search(r"是否|有没有|并非|没有|并未|未曾|不再|会不会|还是", tail):
+            continue
+        positive = bool(re.search(r"增长|增加|上涨|上升|提升", tail))
+        negative = bool(re.search(r"下降|减少|下跌|降低|回落", tail))
+        if positive != negative:
+            directions[alias_to_metric[match.group()]] = 1 if positive else -1
+    return directions
 
 
 def _as_decimal(value: re.Match[str], inherited_unit: str | None) -> Decimal | None:
@@ -101,17 +121,23 @@ def _as_decimal(value: re.Match[str], inherited_unit: str | None) -> Decimal | N
         return None
 
 
-def _simple_header(line: str) -> list[int] | None:
-    """Accept only a flat, explicit year header; adjustment/ratio columns fail closed."""
-    if re.search(r"调整|同比|增减|变化|本年|上年|百分比|%", line):
+def _simple_header(line: str) -> list[int | None] | None:
+    """Accept explicit year columns and one named ratio column, never adjustment subcolumns.
+
+    ``None`` denotes a ratio column that must contain a percentage in the data row.
+    Header tokens and row cells must match exactly; whitespace extraction is supported.
+    """
+    if re.search(r"调整|重述|追溯", line):
         return None
-    parts = [p.strip() for p in re.split(r"\||\t|\s{2,}", line) if p.strip()]
-    if len(parts) < 3 or parts[0] not in ("项目", "指标", "主要会计数据", "财务指标"):
+    line = re.sub(r"^\s*\|?\s*(?:主要会计数据|财务指标|项目|指标)\s*", "", line)
+    token_re = re.compile(r"(?P<year>(?:19|20)\d{2})\s*年?|(?P<ratio>本年比上年增减|本年较上年增减|同比增长率|同比增减|变动幅度)")
+    tokens = list(token_re.finditer(line))
+    if token_re.sub("", line).strip(" |\t"):
         return None
-    if not all(re.fullmatch(r"(?:19|20)\d{2}年?", p) for p in parts[1:]):
+    years = [int(token.group("year")) for token in tokens if token.group("year")]
+    if len(years) < 2 or len(set(years)) != len(years) or len(tokens) - len(years) > 1:
         return None
-    years = [int(p.rstrip("年")) for p in parts[1:]]
-    return years if len(set(years)) == len(years) else None
+    return [int(token.group("year")) if token.group("year") else None for token in tokens]
 
 
 def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str]) -> tuple[list[dict[str, Any]], list[str]]:
@@ -125,7 +151,7 @@ def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str]) -> tuple
             continue
         units = set(UNIT_RE.findall(text))
         inherited_unit = next(iter(units)) if len(units) == 1 else None
-        header: list[int] | None = None
+        header: list[int | None] | None = None
         for raw_line in text.splitlines():
             line = raw_line.strip()
             candidate_header = _simple_header(line)
@@ -143,6 +169,13 @@ def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str]) -> tuple
                 prefix, tail = line.split(alias, 1)
                 if re.search(r"增长率|增幅|占比|比重|同比", tail[:12]) or re.search(r"其中|分部|母公司|其他|境内|境外|分产品|分地区", prefix):
                     continue
+                remaining_prefix = YEAR_RE.sub("", prefix).replace(str(hit.get("company", "")), "")
+                remaining_prefix = re.sub(r"合并口径|本公司|本集团|本年度|人民币|公司|集团|本年|全年|合并|实现", "", remaining_prefix)
+                if remaining_prefix.strip(" -•*|：:，,\t"):
+                    continue
+                if re.search(r"调整前|调整后|重述|追溯", line):
+                    ambiguous.append(f"{hit['label']} 的{metric}涉及调整或重述，未自动选择统计口径")
+                    continue
                 metric_unit = UNIT_RE.search(tail[:12])
                 unit = metric_unit.group(1) if metric_unit else inherited_unit
                 clean_tail = re.sub(r"^[（(](?:单位\s*[:：]?)?(?:人民币)?(?:百万元|亿元|万元|千元|元)[）)]", "", tail).lstrip(" ：:|\t")
@@ -153,27 +186,37 @@ def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str]) -> tuple
                         dated.append((int(dated_match.group(1)), value_match))
                 parsed: list[tuple[int, Decimal]] = []
                 if dated:
-                    for year, value_match in dated:
-                        value = _as_decimal(value_match, unit)
-                        if value is not None:
-                            parsed.append((year, value))
-                elif "%" not in clean_tail and "％" not in clean_tail:
-                    values = list(VALUE_RE.finditer(clean_tail))
-                    # A table row must consist of values and separators only.
-                    leftover = VALUE_RE.sub("", clean_tail).strip(" |\t，,；;：:。")
-                    if len(values) > 1 and header and len(values) == len(header) and not leftover:
-                        for year, value_match in zip(header, values):
+                    if "%" not in clean_tail and "％" not in clean_tail:
+                        for year, value_match in dated:
                             value = _as_decimal(value_match, unit)
                             if value is not None:
                                 parsed.append((year, value))
-                    elif len(values) == 1:
+                else:
+                    values = list(VALUE_RE.finditer(clean_tail))
+                    row_cells = list(ROW_CELL_RE.finditer(clean_tail))
+                    leftover = ROW_CELL_RE.sub("", clean_tail).strip(" |\t，,；;：:。")
+                    if header and len(row_cells) == len(header) and not leftover:
+                        row_values: list[tuple[int, Decimal]] = []
+                        valid_row = True
+                        for year, cell in zip(header, row_cells):
+                            if year is None:
+                                valid_row = valid_row and bool(cell.group("percent")) and not (cell.group("unit") or cell.group("unit_after"))
+                            else:
+                                value = _as_decimal(cell, unit)
+                                if cell.group("percent") or value is None:
+                                    valid_row = False
+                                else:
+                                    row_values.append((year, value))
+                        if valid_row:
+                            parsed.extend(row_values)
+                    elif len(values) == 1 and "%" not in clean_tail and "％" not in clean_tail:
                         prefix_years = [int(m.group(1)) for m in YEAR_RE.finditer(prefix)]
                         # A value followed by a year, a ratio, or another numeric annotation is ambiguous.
                         value = _as_decimal(values[0], unit)
-                        before = clean_tail[:values[0].start()].strip(" ：:为是约达达到人民币")
+                        before = re.sub(r"^[\s：:]*(?:(?:人民币|达到|约为|为|是|约|达)[\s：:]*)*", "", clean_tail[:values[0].start()])
                         after = clean_tail[values[0].end():].strip(" 。；;，,|\t")
-                        if value is not None and not before and not after and len(set(prefix_years)) <= 1:
-                            parsed.append((prefix_years[0] if prefix_years else int(hit["year"]), value))
+                        if value is not None and not before and not after and len(set(prefix_years)) == 1:
+                            parsed.append((prefix_years[0], value))
                 if not parsed and re.match(r"\s*(?:为|是|约|达到|达)?\s*[（(]?[+\-−－]?\d", clean_tail):
                     ambiguous.append(f"{hit['label']} 的{metric}缺少明确单位、年度或存在复杂表头，未计算")
                 for year, value in parsed:
@@ -205,7 +248,7 @@ def _merge_hits(state: AnalysisState, candidates: list[dict[str, Any]]) -> list[
             year, page = int(doc["year"]), int(source.get("page", 0))
         except (ValueError, TypeError, KeyError):
             continue
-        if state["years"] and year not in state["years"]:
+        if state.get("document_years") and year not in state["document_years"]:
             continue
         if page < 1 or (doc.get("page_count") and page > int(doc["page_count"])):
             continue
@@ -329,7 +372,10 @@ def _validate_model_answer(raw: str, state: AnalysisState) -> str:
         cited_labels.update(labels)
         claim_texts.append(content)
         lines.append(f"- {content} " + " ".join(f"[{label}]" for label in dict.fromkeys(labels)))
-    if not set(state["years"]) <= {sources[label]["year"] for label in cited_labels}:
+    covered_years = {fact["year"] for fact in state["facts"] if fact["citation"] in cited_labels}
+    if not state["metric_names"]:
+        covered_years.update(sources[label]["year"] for label in cited_labels)
+    if not set(state["years"]) <= covered_years:
         raise ValueError("model_missing_year")
     if any(not any(alias in "\n".join(claim_texts) for alias in METRICS[metric]) for metric in state["metric_names"]):
         raise ValueError("model_missing_metric")
@@ -347,6 +393,8 @@ def build_analysis_graph(store: ReportStore):
         years = explicit or state.get("years") or sorted({int(doc["year"]) for doc in state["documents"].values()})
         metrics = _metric_names(state["question"])
         comparative = bool(re.search(r"对比|比较|同比|跨年|增长|下降|变化|三年|两年|提升|降低|增加|减少", state["question"]))
+        if comparative and len(years) == 1 and re.search(r"同比|增长|下降|增加|减少|上涨|降低|回落", state["question"]):
+            years = [years[0] - 1, *years]
         causal = bool(re.search(r"为什么|为何|原因|如何解释", state["question"]))
         return {"years": years, "metric_names": metrics, "comparative": comparative, "causal": causal,
                 "queries": [state["question"]],
@@ -358,13 +406,16 @@ def build_analysis_graph(store: ReportStore):
         errors = 0
         for query in state["queries"]:
             # Per-year searches prevent a long recent report from occupying every hit slot.
-            for year in state["years"] or [None]:
+            # A bounded supplement may find a prior-year comparison column in a newer
+            # selected report. An explicit API years filter always remains a hard boundary.
+            report_years = state.get("document_years") or ([None] if state["retries"] else state["years"]) or [None]
+            for year in report_years:
                 calls += 1
                 try:
                     candidates = store.search(query, document_ids=state["document_ids"],
                                               years=[year] if year is not None else None, top_k=8, mode=state["mode"])
                     hits = _merge_hits({**state, "hits": hits}, candidates)
-                except Exception:
+                except Exception:  # noqa: BLE001 - retrieval providers are a failure boundary; preserve a bounded refusal.
                     errors += 1
         return {"hits": hits, "retrieval_calls": calls,
                 "trace": _event(state, "retrieve", "partial" if errors else "complete",
@@ -372,9 +423,9 @@ def build_analysis_graph(store: ReportStore):
 
     def assess(state: AnalysisState) -> dict[str, Any]:
         hits = state["hits"]
-        present = {hit["year"] for hit in hits}
-        missing = sorted(set(state["years"]) - present)
         facts, ambiguous = _extract_facts(hits, state["metric_names"])
+        present = {fact["year"] for fact in facts} if state["metric_names"] else {hit["year"] for hit in hits}
+        missing = sorted(set(state["years"]) - present)
         gaps: list[str] = []
         if not hits:
             gaps.append("所选年报中没有检索到可引用证据")
@@ -389,13 +440,19 @@ def build_analysis_graph(store: ReportStore):
                     if not any(f["company"] == company and f["year"] == year and f["metric"] == metric for f in facts):
                         gaps.append(f"缺少 {company} {year}年{metric}可明确归属年度和单位的数值")
         if state["causal"]:
-            causal_sentences = [sentence for hit in hits for sentence in re.split(r"[。！？\n]", hit["text"]) if CAUSAL_RE.search(sentence)]
+            causal_sentences = [(hit, sentence) for hit in hits for sentence in re.split(r"[。！？\n]", hit["text"]) if CAUSAL_RE.search(sentence)]
             if not causal_sentences:
                 gaps.append("尚无明确说明原因的年报原文；数值变化本身不能证明因果")
-            for metric in state["metric_names"]:
-                aliases = (*METRICS[metric], "收入") if metric == "营业收入" else METRICS[metric]
-                if causal_sentences and not any(any(alias in sentence for alias in aliases) for sentence in causal_sentences):
-                    gaps.append(f"未找到直接解释{metric}变动原因的原文；其他事项的原因不能替代")
+            target_years = state["years"][1:] if state["comparative"] and len(state["years"]) > 1 else state["years"]
+            for company in sorted(companies):
+                for year in target_years:
+                    relevant = [sentence for hit, sentence in causal_sentences
+                                if hit["company"] == company and year in
+                                ({int(m.group(1)) for m in YEAR_RE.finditer(sentence)} or {hit["year"]})]
+                    for metric in state["metric_names"]:
+                        aliases = (*METRICS[metric], "收入") if metric == "营业收入" else METRICS[metric]
+                        if causal_sentences and not any(any(alias in sentence for alias in aliases) for sentence in relevant):
+                            gaps.append(f"未找到直接解释{metric}变动原因的 {company} {year}年原文；其他年度或事项的原因不能替代")
         gaps.extend(_topic_gaps(state))
         gaps.extend(ambiguous)
         return {"facts": facts, "gaps": list(dict.fromkeys(gaps)), "missing_years": missing, "ambiguous": ambiguous,
@@ -436,8 +493,19 @@ def build_analysis_graph(store: ReportStore):
                                     "formula": f"({after} - {before}) / {before} × 100%" if before > 0 else f"{after} - ({before})；基期非正，不算百分比",
                                     "source_labels": list(dict.fromkeys([first["citation"], last["citation"]])),
                                     "operands": [first, last]})
-        return {"calculations": results,
-                "trace": _event(state, "calculate", "complete", f"完成 {len(results)} 项确定性计算；未对歧义数值猜测年度")}
+        contradictions: list[str] = []
+        directions = _requested_directions(state["question"])
+        for calc in results:
+            expected = directions.get(calc["metric"])
+            delta = Decimal(calc["delta"])
+            if expected and (delta == 0 or (delta > 0) != (expected > 0)):
+                actual = "持平" if delta == 0 else "增加" if delta > 0 else "减少"
+                requested = "增长" if expected > 0 else "下降"
+                labels = " ".join(f"[{label}]" for label in calc["source_labels"])
+                contradictions.append(f"问题前提与证据不符：{calc['company']} {calc['from_year']}→{calc['to_year']}年{calc['metric']}实际{actual}，并非{requested} {labels}；不能据此解释{requested}原因")
+        return {"calculations": results, "gaps": [*state["gaps"], *contradictions],
+                "trace": _event(state, "calculate", "contradiction" if contradictions else "complete",
+                                f"完成 {len(results)} 项确定性计算；发现 {len(contradictions)} 项问题前提冲突；未对歧义数值猜测年度")}
 
     def answer(state: AnalysisState) -> dict[str, Any]:
         rendered = _render_extractive(state)
@@ -448,7 +516,7 @@ def build_analysis_graph(store: ReportStore):
                 if raw is not None:
                     rendered = _validate_model_answer(raw, state)
                     answer_mode = "llm"
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - every provider failure must safely fall back without exposing secrets.
                 # Do not return provider error text: it can contain endpoints, credentials, or document bodies.
                 model_error = type(exc).__name__
         return {"answer": rendered, "answer_mode": answer_mode, "model_error": model_error,
@@ -478,8 +546,9 @@ def analyze_reports(store: ReportStore, question: str, document_ids: list[str], 
         raise ValueError("问题不能为空")
     if not document_ids or any(not isinstance(item, str) or not item.strip() for item in document_ids):
         raise ValueError("请至少选择一份可访问的年报")
-    if mode not in {"hybrid", "vector", "keyword"}:
-        raise ValueError("检索模式必须为 hybrid、vector 或 keyword")
+    mode = {"keyword": "bm25", "vector": "semantic"}.get(mode, mode)
+    if mode not in {"hybrid", "semantic", "bm25"}:
+        raise ValueError("检索模式必须为 hybrid、semantic 或 bm25")
     if not isinstance(max_retries, int) or not 0 <= max_retries <= 3:
         raise ValueError("max_retries 必须为 0 到 3")
     if years is not None and any(not isinstance(year, int) or not 1900 <= year <= 2099 for year in years):
@@ -497,7 +566,8 @@ def analyze_reports(store: ReportStore, question: str, document_ids: list[str], 
     with tracing_context(enabled=False):
         state = build_analysis_graph(store).invoke({
             "question": question.strip(), "document_ids": list(documents), "documents": documents,
-            "years": sorted(set(years or [])), "hits": [], "facts": [], "gaps": [], "trace": [],
+            "years": sorted(set(years or [])), "document_years": sorted(set(years or [])),
+            "hits": [], "facts": [], "gaps": [], "trace": [],
             "calculations": [], "queries": [], "retries": 0, "max_retries": max_retries,
             "retrieval_calls": 0, "mode": mode,
         }, config={"recursion_limit": 30})
@@ -507,6 +577,7 @@ def analyze_reports(store: ReportStore, question: str, document_ids: list[str], 
             "calculations": state["calculations"],
             "metrics": {"answer_mode": state["answer_mode"], "requested_mode": mode,
                         "requested_years": state["years"], "missing_years": state["missing_years"],
+                        "document_year_filter": state["document_years"],
                         "evidence_gaps": state["gaps"], "evidence_count": len(state["hits"]),
                         "fact_count": len(state["facts"]), "retries": state["retries"],
                         "retrieval_calls": state["retrieval_calls"], "model_error": state["model_error"],
