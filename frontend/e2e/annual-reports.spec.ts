@@ -99,7 +99,7 @@ test('renders insufficient evidence and request errors without manufacturing cit
   await expect(page.getByRole('alert')).toContainText('年报检索暂时不可用，请重试。');
 });
 
-test('cancels an in-flight analysis and works at a narrow viewport', async ({ page }) => {
+test('stops waiting for an in-flight analysis and works at a narrow viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await setup(page);
   let release!: () => void;
@@ -113,9 +113,10 @@ test('cancels an in-flight analysis and works at a narrow viewport', async ({ pa
   await page.getByRole('button', { name: '收入与现金流', exact: true }).click();
   await page.getByRole('button', { name: '分析所选资料' }).click();
   await expect(page.getByText('正在检索并核对年报证据')).toBeVisible();
-  await page.getByRole('button', { name: '取消分析' }).click();
+  await expect(page.getByRole('status')).toContainText('首次处理长年报可能需数分钟，后续查询会复用索引。');
+  await page.getByRole('button', { name: '停止等待' }).click();
   release();
-  await expect(page.getByRole('alert')).toContainText('已取消本次分析');
+  await expect(page.getByRole('alert')).toContainText('已停止等待结果；后台可能仍在建立索引，可稍后重新查询。');
   await expect(page.getByText('证据充分', { exact: true })).toHaveCount(0);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);
