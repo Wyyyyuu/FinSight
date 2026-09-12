@@ -9,6 +9,7 @@ on:
       - 'requirements-annual.txt'
       - 'frontend/**'
       - 'scripts/verify_annual_midea_2024.py'
+      - 'scripts/collect_annual_reports.py'
       - '.github/workflows/annual-reports.yml'
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - 'requirements-annual.txt'
       - 'frontend/**'
       - 'scripts/verify_annual_midea_2024.py'
+      - 'scripts/collect_annual_reports.py'
       - '.github/workflows/annual-reports.yml'
 
 jobs:
@@ -31,7 +33,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-annual.txt
       - run: pip install -r requirements-annual.txt pytest-cov ruff reportlab
-      - run: python -m ruff check backend/annual_reports backend/api/annual_report_router.py tests/annual_reports
+      - run: python -m ruff check backend/annual_reports backend/api/annual_report_router.py tests/annual_reports scripts/collect_annual_reports.py
       - run: python -m pytest tests/annual_reports -q --cov=backend.annual_reports --cov=backend.api.annual_report_router --cov-report=term-missing --cov-fail-under=80
 
   browser-workspace:
