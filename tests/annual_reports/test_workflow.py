@@ -74,7 +74,7 @@ def test_empty_results_refuse_and_retry_count_is_bounded():
     assert result["status"] == "insufficient_evidence"
     assert result["citations"] == [] and result["calculations"] == []
     assert result["metrics"]["retries"] == 3
-    assert len(store.calls) == 5
+    assert len(store.calls) == 8
     assert "没有检索到" in result["answer"]
 
 
@@ -340,13 +340,12 @@ def test_real_flat_annual_table_skips_ratio_column_and_covers_prior_factual_year
     assert all(op["document_id"] == "2024" for op in latest_revenue["operands"])
 
 
-def test_prior_year_question_can_supplement_from_newer_selected_report():
+def test_prior_year_question_can_read_newer_selected_report_immediately():
     store = FakeStore({2024: MIDEA_FLAT_TABLE}, bind_year=False)
     result = run(store, "2023年营业收入是多少")
     assert result["status"] == "complete"
-    assert result["metrics"]["retries"] == 1
-    assert store.calls[0]["years"] == [2023]
-    assert store.calls[1]["years"] is None
+    assert result["metrics"]["retries"] == 0
+    assert store.calls[0]["years"] == [2024]
     assert result["metrics"]["requested_years"] == [2023]
     assert "3,720.3728亿元" in result["answer"]
     assert result["citations"][0]["year"] == 2024

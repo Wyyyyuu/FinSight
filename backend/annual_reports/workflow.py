@@ -43,6 +43,7 @@ class AnalysisState(TypedDict, total=False):
     retries: int
     max_retries: int
     retrieval_calls: int
+    retrieval_limited: bool
     mode: str
     trace: list[dict[str, str]]
     answer: str
@@ -64,6 +65,10 @@ VALUE_RE = re.compile(rf"(?P<open>[（(])?\s*(?P<number>{NUMBER})\s*(?P<unit>百
 ROW_CELL_RE = re.compile(VALUE_RE.pattern + r"(?P<percent>[%％])?")
 UNIT_RE = re.compile(r"(?:单位\s*[:：]?\s*(?:人民币)?\s*|[（(]\s*(?:人民币)?\s*)(百万元|亿元|万元|千元|元)")
 CAUSAL_RE = re.compile(r"主要(?:原因|系|是|由于)|原因(?:是|为|如下)|由于|导致|所致|受.{0,18}影响")
+MAX_SELECTED_DOCUMENTS = 30
+MAX_RETRIEVAL_CALLS = 120
+MAX_EVIDENCE_HITS = 480
+PARTITION_TOP_K = 8
 
 
 def _event(state: AnalysisState, node: str, status: str, detail: str) -> list[dict[str, str]]:
@@ -269,6 +274,24 @@ def _merge_hits(state: AnalysisState, candidates: list[dict[str, Any]]) -> list[
     return result
 
 
+def _retrieval_partitions(state: AnalysisState) -> list[tuple[str, int, list[str]]]:
+    """Give every selected company/report-year its own retrieval quota.
+
+    Question years describe financial facts, which can be comparison columns in a
+    newer report. Only the explicit API document-year filter restricts reports.
+    There are at most 30 partitions because the selection itself is bounded.
+    """
+    groups: dict[tuple[str, int], list[str]] = {}
+    for document_id in state["document_ids"]:
+        doc = state["documents"][document_id]
+        year = int(doc["year"])
+        if state.get("document_years") and year not in state["document_years"]:
+            continue
+        key = str(doc.get("company", "未标注公司")), year
+        groups.setdefault(key, []).append(document_id)
+    return [(company, year, ids) for (company, year), ids in groups.items()]
+
+
 def _format_amount(value: str | Decimal) -> str:
     number = Decimal(value)
     if abs(number) >= Decimal(100000000):
@@ -418,23 +441,42 @@ def build_analysis_graph(store: ReportStore):
     def retrieve(state: AnalysisState) -> dict[str, Any]:
         hits = list(state.get("hits", []))
         calls = state.get("retrieval_calls", 0)
+        limited = state.get("retrieval_limited", False)
         errors = 0
+        partitions = _retrieval_partitions(state)
+        if not state["retries"] and not state.get("document_years"):
+            # Prefer reports matching the requested fiscal years for each company.
+            # If that company only has a newer selected report, its comparison
+            # columns are eligible immediately. Supplements cover all scoped years.
+            matching_companies = {company for company, year, _ids in partitions if year in state["years"]}
+            partitions = [(company, year, ids) for company, year, ids in partitions
+                          if year in state["years"] or company not in matching_companies]
         for query in state["queries"]:
-            # Per-year searches prevent a long recent report from occupying every hit slot.
-            # A bounded supplement may find a prior-year comparison column in a newer
-            # selected report. An explicit API years filter always remains a hard boundary.
-            report_years = state.get("document_years") or ([None] if state["retries"] else state["years"]) or [None]
-            for year in report_years:
+            # Finish a query for every partition before starting the next query. Merge
+            # each rank in round-robin order so previews and caps also preserve coverage.
+            batches = []
+            if calls + len(partitions) > MAX_RETRIEVAL_CALLS or len(hits) >= MAX_EVIDENCE_HITS:
+                limited = True
+                break
+            for _company, year, document_ids in partitions:
                 calls += 1
                 try:
-                    candidates = store.search(query, document_ids=state["document_ids"],
-                                              years=[year] if year is not None else None, top_k=8, mode=state["mode"])
-                    hits = _merge_hits({**state, "hits": hits}, candidates)
+                    candidates = store.search(query, document_ids=document_ids,
+                                              years=[year], top_k=PARTITION_TOP_K, mode=state["mode"])
+                    # Providers cannot widen even the current partition, not just the
+                    # overall selection. Canonical metadata is rechecked by _merge_hits.
+                    scoped = [hit for hit in candidates if hit.get("document_id") in document_ids]
+                    batches.append(_merge_hits({**state, "hits": []}, scoped)[:PARTITION_TOP_K])
                 except Exception:  # noqa: BLE001 - retrieval providers are a failure boundary; preserve a bounded refusal.
                     errors += 1
-        return {"hits": hits, "retrieval_calls": calls,
-                "trace": _event(state, "retrieve", "partial" if errors else "complete",
-                                f"累计 {len(hits)} 条本次选定年报证据；本轮查询错误 {errors} 次")}
+            candidates = [batch[rank] for rank in range(PARTITION_TOP_K) for batch in batches if rank < len(batch)]
+            merged = _merge_hits({**state, "hits": hits}, candidates)
+            limited = limited or len(merged) > MAX_EVIDENCE_HITS
+            hits = merged[:MAX_EVIDENCE_HITS]
+        return {"hits": hits, "retrieval_calls": calls, "retrieval_limited": limited,
+                "trace": _event(state, "retrieve", "partial" if errors or limited else "complete",
+                                f"按 {len(partitions)} 个公司/报告年度分组检索；累计 {len(hits)} 条本次选定年报证据；"
+                                f"本轮查询错误 {errors} 次" + ("；达到检索预算，保留已取得证据" if limited else ""))}
 
     def assess(state: AnalysisState) -> dict[str, Any]:
         hits = state["hits"]
@@ -446,11 +488,13 @@ def build_analysis_graph(store: ReportStore):
             gaps.append("所选年报中没有检索到可引用证据")
         if missing:
             gaps.append("缺少以下年度的年报证据：" + "、".join(map(str, missing)))
-        if state["comparative"] and len(state["years"]) < 2:
+        companies = {company for company, _year, _ids in _retrieval_partitions(state)}
+        if state["comparative"] and len(state["years"]) < 2 and len(companies) < 2:
             gaps.append("跨年比较至少需要两个明确年度的证据")
-        companies = {doc.get("company", "未标注公司") for doc in state["documents"].values()}
         for company in sorted(companies):
             for year in state["years"]:
+                if not state["metric_names"] and not any(hit["company"] == company and hit["year"] == year for hit in hits):
+                    gaps.append(f"缺少 {company} {year}年可引用的原文证据")
                 for metric in state["metric_names"]:
                     if not any(f["company"] == company and f["year"] == year and f["metric"] == metric for f in facts):
                         gaps.append(f"缺少 {company} {year}年{metric}可明确归属年度和单位的数值")
@@ -472,12 +516,14 @@ def build_analysis_graph(store: ReportStore):
         # An unreadable, unrelated retrieved row does not invalidate a complete, unambiguous
         # set of facts. Conflicting values for a requested fact remain a hard evidence gap.
         gaps.extend(warning for warning in ambiguous if "有冲突数值" in warning)
+        if gaps and state.get("retrieval_limited"):
+            gaps.append("已达到本次检索预算，仍有证据缺口；可减少所选公司或分批提问")
         return {"facts": facts, "gaps": list(dict.fromkeys(gaps)), "missing_years": missing, "ambiguous": ambiguous,
                 "trace": _event(state, "assess", "insufficient_evidence" if gaps else "complete",
                                 "；".join(gaps) if gaps else "所需年度、指标和引用证据齐备")}
 
     def route(state: AnalysisState) -> str:
-        return "supplement" if state["gaps"] and state["retries"] < state["max_retries"] else "calculate"
+        return "supplement" if state["gaps"] and state["retries"] < state["max_retries"] and not state.get("retrieval_limited") else "calculate"
 
     def supplement(state: AnalysisState) -> dict[str, Any]:
         queries = [f"{metric} 主要会计数据 财务指标" for metric in state["metric_names"]]
@@ -563,6 +609,8 @@ def analyze_reports(store: ReportStore, question: str, document_ids: list[str], 
         raise ValueError("问题不能为空")
     if not document_ids or any(not isinstance(item, str) or not item.strip() for item in document_ids):
         raise ValueError("请至少选择一份可访问的年报")
+    if len(set(document_ids)) > MAX_SELECTED_DOCUMENTS:
+        raise ValueError("一次最多选择 30 份年报，请分批分析")
     mode = {"keyword": "bm25", "vector": "semantic"}.get(mode, mode)
     if mode not in {"hybrid", "semantic", "bm25"}:
         raise ValueError("检索模式必须为 hybrid、semantic 或 bm25")
@@ -586,7 +634,7 @@ def analyze_reports(store: ReportStore, question: str, document_ids: list[str], 
             "years": sorted(set(years or [])), "document_years": sorted(set(years or [])),
             "hits": [], "facts": [], "gaps": [], "trace": [],
             "calculations": [], "queries": [], "retries": 0, "max_retries": max_retries,
-            "retrieval_calls": 0, "mode": mode,
+            "retrieval_calls": 0, "retrieval_limited": False, "mode": mode,
         }, config={"recursion_limit": 30})
     effective_modes = sorted({str(hit["retrieval_mode"]) for hit in state["hits"]})
     return {"answer": state["answer"], "status": state["status"], "citations": state["hits"],
@@ -599,4 +647,5 @@ def analyze_reports(store: ReportStore, question: str, document_ids: list[str], 
                         "extraction_warnings": state["ambiguous"],
                         "fact_count": len(state["facts"]), "retries": state["retries"],
                         "retrieval_calls": state["retrieval_calls"], "model_error": state["model_error"],
+                        "retrieval_limited": state["retrieval_limited"],
                         "elapsed_ms": round((time.monotonic() - started) * 1000, 2)}}
