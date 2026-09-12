@@ -115,6 +115,8 @@ PDF 单测需要 `reportlab`（主项目依赖已包含）；全新独立环境�
 
 上游两项策略测试曾在依赖未安装完整时失败，补齐原项目数据工具依赖后，上述 95 项全部通过。未运行原项目所有后端测试、外部行情服务或有密钥的生成模型评测。
 
+新增[年报工作台 GitHub CI](https://github.com/Wyyyyuu/FinSight/actions/runs/34678057087)已在 Linux 通过后端覆盖率门槛、前端单测、构建和浏览器测试。首轮整库 CI 在安装上游 `litellm==1.30.0` 时失败；当前代码无该库引用且本功能无需它，已移除这项失效依赖。
+
 ### 可重复的真实年报验收
 
 从[美的官方 2024 年度报告](https://www.midea.com.cn/content/dam/mideacn-aem/%E6%8A%95%E8%B5%84%E8%80%85%E5%85%B3%E7%B3%BB/%E6%8A%95%E8%B5%84%E8%80%85%E5%85%B3%E7%B3%BB%E6%96%87%E4%BB%B6%E6%80%BB%E8%A7%88/2024%E6%96%87%E4%BB%B6/%E7%BE%8E%E7%9A%84%E9%9B%A2-2024%E5%B9%B4%E5%B9%B4%E5%BA%A6%E6%8A%A5%E5%91%8A.PDF.coredownload.inline.pdf)下载 PDF，传给验收脚本。报告没有提交到 Git。

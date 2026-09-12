@@ -21,7 +21,6 @@ langgraph-checkpoint-sqlite==3.0.3
 langgraph-checkpoint-postgres==3.0.4
 
 # LLM 服务 & 数据抓取
-litellm==1.30.0
 ddgs==9.6.1
 yfinance==0.2.66
 finnhub-python==2.4.25
