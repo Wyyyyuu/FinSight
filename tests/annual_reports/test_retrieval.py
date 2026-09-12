@@ -266,3 +266,27 @@ def test_long_chinese_evidence_tail_is_embedded_instead_of_truncated():
     assert all(len(window) <= 400 for window in captured)
     assert "现金流下降" in captured[-1]
     assert vector[0] > 0 and vector[1] > 0
+
+
+def test_fastembed_explicitly_limits_inference_batch_size(tmp_path, monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    calls = []
+
+    class SmallBatchModel:
+        def embed(self, texts, **kwargs):
+            calls.append(kwargs)
+            return [[1.0, 0.0] for _ in texts]
+
+    monkeypatch.setitem(
+        sys.modules,
+        "fastembed",
+        SimpleNamespace(TextEmbedding=lambda **kwargs: SmallBatchModel()),
+    )
+    monkeypatch.setenv("ANNUAL_REPORT_EMBEDDING_PROVIDER", "fastembed")
+    monkeypatch.delenv("ANNUAL_REPORT_EMBEDDING_BATCH_SIZE", raising=False)
+    store = AnnualReportStore(tmp_path)
+    doc = store.ingest_bytes("经营现金流正常。".encode(), "r.txt", "公司", 2024)
+    assert store.search("现金流", [doc["id"]])[0]["retrieval_mode"] == "hybrid"
+    assert calls and all(call["batch_size"] == 8 for call in calls)

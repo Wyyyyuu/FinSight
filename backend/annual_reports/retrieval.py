@@ -173,10 +173,23 @@ class SemanticEmbedder:
                     if start + 400 >= len(clean):
                         break
                 groups.append(group)
+            inference_options = (
+                {
+                    "batch_size": max(
+                        1,
+                        min(
+                            32,
+                            int(os.getenv("ANNUAL_REPORT_EMBEDDING_BATCH_SIZE", "8")),
+                        ),
+                    )
+                }
+                if not self._injected
+                else {}
+            )
             if query and hasattr(model, "query_embed"):
-                raw: Iterable[Any] = model.query_embed(windows)
+                raw: Iterable[Any] = model.query_embed(windows, **inference_options)
             elif hasattr(model, "embed"):
-                raw = model.embed(windows)
+                raw = model.embed(windows, **inference_options)
             elif hasattr(model, "encode"):
                 raw = model.encode(windows)
             elif callable(model):

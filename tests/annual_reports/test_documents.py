@@ -266,3 +266,13 @@ def test_split_financial_tables_repeat_their_own_year_header(tmp_path):
         len(chunk["text"]) <= CHUNK_SIZE
         for chunk in documents._chunk_pages([text], "id")
     )
+
+
+def test_financial_note_heading_resets_unrelated_table_context(tmp_path):
+    text = "2023年    按权益法调整    2024年\n3,559,731    314,592    3,768,525\n(3) 营业收入\n营业收入主要为公司向下属子公司收取的商标使用费收入。"
+    store = AnnualReportStore(tmp_path)
+    doc = store.ingest_bytes(text.encode(), "notes.txt", "公司", 2024)
+    hit = store.search("商标使用费收入", [doc["id"]], mode="bm25")[0]
+    assert hit["section"] == "(3) 营业收入"
+    assert "按权益法调整" not in hit["text"]
+    assert "2023" not in hit["text"]

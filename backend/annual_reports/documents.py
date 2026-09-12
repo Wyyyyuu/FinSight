@@ -162,6 +162,12 @@ def _is_heading(line: str) -> bool:
         or re.match(r"^第[一二三四五六七八九十百零〇\d]+[章节篇部]\s*\S", line)
         or re.match(r"^[一二三四五六七八九十]+[、．.]\s*\S", line)
         or re.match(r"^[（(][一二三四五六七八九十]+[）)]\s*\S", line)
+        # Financial-note headings such as '(61) 营业收入和营业成本' must
+        # terminate the previous table's column context. Exclude numeric rows.
+        or (
+            re.match(r"^[（(]\s*\d{1,3}\s*[）)]\s*[^\d\s]", line)
+            and not re.search(r"\d", re.sub(r"^[（(]\s*\d{1,3}\s*[）)]", "", line))
+        )
         or line
         in {
             "管理层讨论与分析",
