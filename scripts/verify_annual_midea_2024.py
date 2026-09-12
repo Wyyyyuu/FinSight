@@ -149,7 +149,10 @@ def main(argv: list[str] | None = None) -> int:
         "setup_assertions": [], "cases": [],
     }
     previous_download_setting = os.environ.get("ANNUAL_REPORT_ALLOW_MODEL_DOWNLOAD")
+    previous_embedding_provider = os.environ.get("ANNUAL_REPORT_EMBEDDING_PROVIDER")
     os.environ["ANNUAL_REPORT_ALLOW_MODEL_DOWNLOAD"] = "0"
+    if args.mode == "hybrid":
+        os.environ["ANNUAL_REPORT_EMBEDDING_PROVIDER"] = "fastembed"
     try:
         from backend.annual_reports import documents, workflow
 
@@ -179,6 +182,7 @@ def main(argv: list[str] | None = None) -> int:
                 except Exception as exc:  # noqa: BLE001 - preserve all case failures in the report and exit nonzero.
                     case.update({"status": "error", "retrieval_mode": None, "error_type": type(exc).__name__})
                     _check(case["assertions"], "case_completed_without_exception", False, True)
+                _check(case["assertions"], "actual_retrieval_mode_matches_requested_mode", case.get("retrieval_mode"), args.mode)
                 case["elapsed_ms"] = round((time.perf_counter() - case_started) * 1000, 2)
                 case["passed"] = all(item["passed"] for item in case["assertions"])
                 report["cases"].append(case)
@@ -194,6 +198,11 @@ def main(argv: list[str] | None = None) -> int:
             os.environ.pop("ANNUAL_REPORT_ALLOW_MODEL_DOWNLOAD", None)
         else:
             os.environ["ANNUAL_REPORT_ALLOW_MODEL_DOWNLOAD"] = previous_download_setting
+        if args.mode == "hybrid":
+            if previous_embedding_provider is None:
+                os.environ.pop("ANNUAL_REPORT_EMBEDDING_PROVIDER", None)
+            else:
+                os.environ["ANNUAL_REPORT_EMBEDDING_PROVIDER"] = previous_embedding_provider
 
     assertions = [*report["setup_assertions"], *(a for case in report["cases"] for a in case["assertions"])]
     report["summary"] = {
