@@ -74,7 +74,7 @@ def test_empty_results_refuse_and_retry_count_is_bounded():
     assert result["status"] == "insufficient_evidence"
     assert result["citations"] == [] and result["calculations"] == []
     assert result["metrics"]["retries"] == 3
-    assert len(store.calls) == 8
+    assert len(store.calls) == 20
     assert "没有检索到" in result["answer"]
 
 
@@ -227,7 +227,7 @@ def test_search_error_is_bounded_and_refuses():
         raise RuntimeError("index unavailable")
     result = run(FakeStore({2023: "营业收入：1亿元"}, search_override=fail), "2023年营业收入", max_retries=1)
     assert result["status"] == "insufficient_evidence"
-    assert result["metrics"]["retrieval_calls"] == 2
+    assert result["metrics"]["retrieval_calls"] == 4
     assert result["trace"][1]["status"] == "partial"
 
 

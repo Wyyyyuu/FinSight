@@ -12,6 +12,7 @@ import os
 import re
 import time
 from decimal import Decimal, InvalidOperation
+from itertools import pairwise
 from typing import Any, Protocol, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -126,16 +127,18 @@ def _as_decimal(value: re.Match[str], inherited_unit: str | None) -> Decimal | N
         return None
 
 
-def _simple_header(line: str) -> list[int | None] | None:
+def _simple_header(line: str, report_year: int | None = None) -> list[int | None] | None:
     """Accept explicit year columns and one named ratio column, never adjustment subcolumns.
 
-    ``None`` denotes a ratio column that must contain a percentage in the data row.
+    ``None`` denotes a ratio column whose percent unit must appear in its header or row.
     Header tokens and row cells must match exactly; whitespace extraction is supported.
     """
     if re.search(r"调整|重述|追溯", line):
         return None
-    line = re.sub(r"^\s*\|?\s*(?:主要会计数据|财务指标|项目|指标)\s*", "", line)
-    token_re = re.compile(r"(?P<year>(?:19|20)\d{2})\s*年?|(?P<ratio>本年比上年增减|本年较上年增减|同比增长率|同比增减|变动幅度)")
+    line = re.sub(r"^\s*\|?\s*(?:主要会计数据|财务指标|项\s*目|指标|科目)\s*", "", line)
+    if report_year is not None and re.search(r"本期数\s+上年同期数", line):
+        line = line.replace("本期数", f"{report_year}年").replace("上年同期数", f"{report_year - 1}年")
+    token_re = re.compile(r"(?P<year>(?:19|20)\d{2})\s*(?:年度?)?|(?P<ratio>本年比上年增减|本年较上年增减|同比增长率|同比增减|变动幅度|变动比例)(?:\s*[（(]\s*[%％]\s*[）)])?")
     tokens = list(token_re.finditer(line))
     if token_re.sub("", line).strip(" |\t"):
         return None
@@ -145,23 +148,70 @@ def _simple_header(line: str) -> list[int | None] | None:
     return [int(token.group("year")) if token.group("year") else None for token in tokens]
 
 
+def _join_wrapped_metric_rows(text: str) -> str:
+    """Join only an exact known metric split over two neighboring table lines."""
+    lines = text.splitlines()
+    aliases = [alias for names in METRICS.values() for alias in names]
+    result = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        match = re.match(r"^\s*([\u4e00-\u9fff]+)\s+([（(+\-−－]?\d.*)$", line)
+        if match and index + 1 < len(lines):
+            prefix, values = match.groups()
+            following = lines[index + 1].strip()
+            for alias in aliases:
+                if not alias.startswith(prefix) or alias == prefix:
+                    continue
+                suffix = alias[len(prefix):]
+                continuation = re.fullmatch(re.escape(suffix) + r"([（(](?:人民币)?(?:百万元|亿元|万元|千元|元)[）)])?", following)
+                if continuation:
+                    result.append(alias + (continuation.group(1) or "") + " " + values)
+                    index += 2
+                    break
+            else:
+                result.append(line)
+                index += 1
+            continue
+        result.append(line)
+        index += 1
+    return "\n".join(result)
+
+
 def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str], years: list[int] | None = None) -> tuple[list[dict[str, Any]], list[str]]:
     facts: list[dict[str, Any]] = []
     ambiguous: list[str] = []
     for hit in hits:
-        text = str(hit["text"])
+        context = str(hit.get("source_context", ""))
+        text = "\n".join(part for part in (context, str(hit["text"])) if part)
+        statement_context = context or str(hit.get("section", ""))
+        if re.search(r"母公司(?:利润表|现金流量表|资产负债表)", statement_context):
+            ambiguous.append(f"{hit['label']} 为母公司单体报表，未替代公司合并口径")
+            continue
         if re.search(r"美元|港元|港币|欧元|USD|HKD|EUR", text, re.IGNORECASE):
             # Mixing currencies requires an exchange-rate policy absent from this workflow.
             ambiguous.append(f"{hit['label']} 出现非人民币币种，未进行跨币种计算")
             continue
         units = set(UNIT_RE.findall(text))
         inherited_unit = next(iter(units)) if len(units) == 1 else None
+        report_titles = {int(year) for year in re.findall(r"((?:19|20)\d{2})\s*年\s*年度报告", text)}
+        report_year = int(hit["year"]) if report_titles == {int(hit["year"])} else None
+        # Relative period columns require an explicit annual title and no shorter
+        # period label. Metadata alone never turns an undated number into a year.
+        if re.search(r"季度|半年度|[1-9]月|[一二三四]季度", text):
+            report_year = None
+        consolidated_income = bool(re.search(r"合并利润表", statement_context))
         header: list[int | None] | None = None
-        for raw_line in text.splitlines():
+        header_percent = False
+        for raw_line in _join_wrapped_metric_rows(text).splitlines():
             line = raw_line.strip()
-            candidate_header = _simple_header(line)
+            candidate_header = _simple_header(line, report_year)
             if candidate_header:
                 header = candidate_header
+                header_percent = bool(re.search(r"[（(]\s*[%％]\s*[）)]", line))
+                continue
+            if header and None in header and re.fullmatch(r"[（(]\s*[%％]\s*[）)]", line):
+                header_percent = True
                 continue
             if re.search(r"调整前|调整后|本年比|上年同期|同比.*%", line):
                 header = None
@@ -172,6 +222,8 @@ def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str], years: l
                     continue
                 # Never confuse the actual metric with its growth rate or a segment's income.
                 prefix, tail = line.split(alias, 1)
+                if metric == "营业收入" and consolidated_income and re.fullmatch(r"\s*其中\s*[:：]\s*", prefix):
+                    prefix = ""
                 if re.search(r"增长率|增幅|占比|比重|同比", tail[:12]) or re.search(r"其中|分部|母公司|其他|境内|境外|分产品|分地区", prefix):
                     continue
                 remaining_prefix = YEAR_RE.sub("", prefix).replace(str(hit.get("company", "")), "")
@@ -200,12 +252,14 @@ def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str], years: l
                     values = list(VALUE_RE.finditer(clean_tail))
                     row_cells = list(ROW_CELL_RE.finditer(clean_tail))
                     leftover = ROW_CELL_RE.sub("", clean_tail).strip(" |\t，,；;：:。")
-                    if header and len(row_cells) == len(header) and not leftover:
+                    separated = all(re.search(r"\s|\|", clean_tail[left.end("number"):right.start("number")])
+                                    for left, right in pairwise(row_cells))
+                    if header and len(row_cells) == len(header) and not leftover and separated:
                         row_values: list[tuple[int, Decimal]] = []
                         valid_row = True
                         for year, cell in zip(header, row_cells):
                             if year is None:
-                                valid_row = valid_row and bool(cell.group("percent")) and not (cell.group("unit") or cell.group("unit_after"))
+                                valid_row = valid_row and bool(cell.group("percent") or header_percent) and not (cell.group("unit") or cell.group("unit_after"))
                             else:
                                 value = _as_decimal(cell, unit)
                                 if cell.group("percent") or value is None:
@@ -268,6 +322,7 @@ def _merge_hits(state: AnalysisState, candidates: list[dict[str, Any]]) -> list[
                        "filename": doc["filename"], "company": doc.get("company", "未标注公司"),
                        "year": year, "page": page, "section": str(source.get("section", "")),
                        "text": str(source["text"]), "score": source.get("score", 0),
+                       "source_context": str(source.get("source_context", "")),
                        "retrieval_mode": source.get("retrieval_mode", state["mode"]),
                        "label": f"S{len(result) + 1}"})
         seen.add(key)
@@ -529,6 +584,12 @@ def build_analysis_graph(store: ReportStore):
         queries = [f"{metric} 主要会计数据 财务指标" for metric in state["metric_names"]]
         if state["causal"]:
             queries.append(" ".join(state["metric_names"]) + " 变动原因 主要系")
+        # Alternate statement/management tables may be readable when the summary
+        # has adjustment subcolumns or merged PDF cells. Do not guess that layout.
+        if "营业收入" in state["metric_names"]:
+            queries.extend(["营业收入 合并利润表", "营业收入 本期数 上年同期数"])
+        elif "经营活动产生的现金流量净额" in state["metric_names"]:
+            queries.append("经营活动产生的现金流量净额 本期数 上年同期数 同比增减")
         if not queries:
             queries = [state["question"] + " 年度报告 相关说明"]
         return {"queries": queries[:4], "retries": state["retries"] + 1,

@@ -286,6 +286,61 @@ def _chunk_pages(pages: list[str], document_id: str) -> list[dict[str, Any]]:
     return chunks
 
 
+def _same_page_table_context(page_text: str, chunk_text: str) -> str:
+    """Recover only literal same-page context lost at an existing chunk boundary.
+
+    This does not rewrite persisted chunks or embeddings. The anchor is an exact
+    source line; a table header and unit must precede it on the same physical page.
+    Ambiguous adjustment/subcolumn headers are retained so parsers can refuse them.
+    """
+    lines = [line.strip() for line in page_text.splitlines()]
+    anchors = [line.strip() for line in chunk_text.splitlines()
+               if len(line.strip()) >= 12 and re.search(r"[\u4e00-\u9fff]", line)
+               and re.search(r"\d{1,3}(?:[,，]\d{3})+|\d+\.\d+", line)
+               and not _year_table_header(line)]
+    indexes = [lines.index(line) for line in anchors if line in lines]
+    if not indexes:
+        return ""
+    first = min(indexes)
+    before = lines[:first]
+    header_index = next((index for index in range(len(before) - 1, -1, -1)
+                         if _year_table_header(before[index])
+                         or re.search(r"本期数\s+上年同期数", before[index])), None)
+    if header_index is None:
+        return ""
+    # An intervening statement/note heading terminates the previous table.
+    if any(_is_heading(line) for line in before[header_index + 1:]):
+        return ""
+    context = []
+    title = next((line for line in lines[:5] if re.search(r"(?:19|20)\d{2}\s*年\s*年度报告", line)), None)
+    if title:
+        context.append(title)
+    preceding = before[:header_index]
+    statement = next((line for line in reversed(preceding)
+                      if re.search(r"(?:合并|母公司)(?:利润表|现金流量表|资产负债表)", line)), None)
+    if statement:
+        context.append(statement)
+    # Explicit unit lines only; never infer a unit from unrelated metric values.
+    units = [(index, line) for index, line in enumerate(preceding)
+             if re.search(r"单位\s*[:：]\s*(?:人民币)?\s*(?:百万元|亿元|万元|千元|元)", line)]
+    if units:
+        index, unit = units[-1]
+        if not any(_is_heading(line) for line in preceding[index + 1:]):
+            context.append(unit)
+    context.append(before[header_index])
+    # Header continuations carry percent units or adjustment labels. Do not copy
+    # unrelated financial values into another evidence chunk.
+    for line in before[header_index + 1:]:
+        if not line:
+            continue
+        if re.search(r"\d", line) or len(line) > 200:
+            break
+        context.append(line)
+        if len(context) >= 8:
+            break
+    return "\n".join(dict.fromkeys(context))
+
+
 class AnnualReportStore:
     """SQLite-backed report library with explicit document-scoped retrieval.
 
@@ -573,6 +628,15 @@ class AnnualReportStore:
                 ranked, actual_mode = lexical, "bm25_fallback"
                 warning = str(exc)
         by_id = {chunk["id"]: chunk for chunk in chunks}
+        selected_pages = {(by_id[chunk_id]["document_id"], by_id[chunk_id]["page"])
+                          for chunk_id, _score in ranked[:top_k]}
+        page_texts = {}
+        with self._connect() as connection:
+            for document_id, page in selected_pages:
+                row = connection.execute("SELECT text FROM pages WHERE document_id = ? AND page = ?",
+                                         (document_id, page)).fetchone()
+                if row:
+                    page_texts[(document_id, page)] = row["text"]
         hits = []
         for chunk_id, score in ranked[:top_k]:
             hit = {
@@ -581,6 +645,9 @@ class AnnualReportStore:
                 "retrieval_mode": actual_mode,
             }
             hit.pop("ordinal", None)
+            context = _same_page_table_context(page_texts.get((hit["document_id"], hit["page"]), ""), hit["text"])
+            if context:
+                hit["source_context"] = context
             if warning:
                 hit["retrieval_warning"] = warning
             hits.append(hit)

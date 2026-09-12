@@ -93,9 +93,9 @@ def test_metric_supplement_also_partitions_companies_and_reads_prior_year_column
     assert result["metrics"]["retries"] == 1
     assert result["metrics"]["fact_count"] == 16
     assert len(result["calculations"]) == 8
-    assert len(store.calls) == 12
+    assert len(store.calls) == 20
     assert all(len(call["ids"]) == 1 and call["years"] == [2024] for call in store.calls)
-    assert Counter(call["ids"][0] for call in store.calls) == Counter({doc_id: 3 for doc_id in store.documents})
+    assert Counter(call["ids"][0] for call in store.calls) == Counter({doc_id: 5 for doc_id in store.documents})
 
 
 def test_selection_year_and_current_partition_reject_provider_leaks():
@@ -131,7 +131,7 @@ def test_other_company_evidence_cannot_hide_a_missing_company():
     result = analyze(store, "比较2024年营业收入")
     assert result["status"] == "insufficient_evidence"
     assert any("乙 2024年营业收入" in gap for gap in result["metrics"]["evidence_gaps"])
-    assert Counter(call["ids"][0] for call in store.calls) == Counter({doc_id: 2 for doc_id in store.documents})
+    assert Counter(call["ids"][0] for call in store.calls) == Counter({doc_id: 4 for doc_id in store.documents})
     generic = analyze(store, "比较2024年各公司年报")
     assert generic["status"] == "insufficient_evidence"
     assert any("乙 2024年可引用" in gap for gap in generic["metrics"]["evidence_gaps"])
