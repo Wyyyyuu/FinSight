@@ -60,7 +60,7 @@ def test_real_graph_runs_all_nodes_without_supplement_when_sufficient():
 
 def test_supplement_can_find_missing_year_then_stops():
     def search(store, query, ids, years):
-        return [hit for hit in store.hits if (not years or hit["year"] in years) and (hit["year"] == 2022 or query == "营业收入")]
+        return [hit for hit in store.hits if (not years or hit["year"] in years) and (hit["year"] == 2022 or query.startswith("营业收入"))]
     result = run(FakeStore({2022: "营业收入：1亿元", 2023: "营业收入：2亿元"}, search_override=search))
     assert result["status"] == "complete"
     assert result["metrics"]["retries"] == 1
@@ -209,11 +209,11 @@ def test_model_citations_cannot_launder_unsupported_claims(monkeypatch, claim):
 
 
 def test_verified_model_excerpt_is_accepted(monkeypatch):
-    raw = json.dumps({"claims": [{"text": "营业收入：1亿元", "citations": ["S1"]}]}, ensure_ascii=False)
+    raw = json.dumps({"claims": [{"text": "2023年营业收入：1亿元", "citations": ["S1"]}]}, ensure_ascii=False)
     monkeypatch.setattr(workflow, "_request_model_answer", lambda state: raw)
     result = run(FakeStore({2023: "营业收入：1亿元"}), "2023年营业收入")
     assert result["metrics"]["answer_mode"] == "llm"
-    assert "营业收入：1亿元 [S1]" in result["answer"]
+    assert "2023年营业收入：1亿元 [S1]" in result["answer"]
 
 
 def test_insufficient_evidence_never_calls_generation(monkeypatch):
@@ -299,7 +299,7 @@ def test_model_client_uses_only_opt_in_config_and_validates_response(monkeypatch
     requests = []
     def handler(request):
         requests.append(request)
-        content = json.dumps({"claims": [{"text": "营业收入：1亿元", "citations": ["S1"]}]}, ensure_ascii=False)
+        content = json.dumps({"claims": [{"text": "2023年营业收入：1亿元", "citations": ["S1"]}]}, ensure_ascii=False)
         return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
     monkeypatch.setattr(httpx, "Client", lambda **kwargs: original_client(transport=httpx.MockTransport(handler), **kwargs))
     result = run(FakeStore({2023: "营业收入：1亿元"}), "2023年营业收入")
@@ -400,3 +400,41 @@ def test_retrieval_mode_names_match_store_contract(mode, canonical):
     result = run(store, "2023年营业收入", mode=mode)
     assert result["status"] == "complete"
     assert all(call["mode"] == canonical for call in store.calls)
+
+
+def test_supplement_targets_primary_financial_statement_when_generic_search_is_noisy():
+    def search(store, query, ids, years):
+        if "主要会计数据" in query:
+            return store.hits
+        return []
+    store = FakeStore({2024: MIDEA_FLAT_TABLE}, bind_year=False, search_override=search)
+    result = run(store, "2023年营业收入是多少")
+    assert result["status"] == "complete"
+    assert result["metrics"]["retries"] == 1
+    assert result["metrics"]["fact_count"] == 1
+
+
+def test_ambiguous_extra_hit_does_not_invalidate_a_complete_unambiguous_fact_set():
+    store = FakeStore({2022: "2022年营业收入：100万元", 2023: "2023年营业收入：120万元\n营业收入：300 400"}, bind_year=False)
+    result = run(store)
+    assert result["status"] == "complete"
+    assert result["metrics"]["evidence_gaps"] == []
+    assert result["metrics"]["extraction_warnings"]
+    assert result["calculations"][0]["change_pct"] == 20
+
+
+def test_conflicts_outside_question_years_do_not_block_requested_fact():
+    store = FakeStore({2024: "2024年营业收入：120万元\n2022年营业收入：100万元\n2022年营业收入：110万元"}, bind_year=False)
+    result = run(store, "2024年营业收入是多少")
+    assert result["status"] == "complete"
+    assert result["metrics"]["fact_count"] == 1
+
+
+def test_model_must_quote_the_requested_year_not_just_the_correct_document(monkeypatch):
+    raw = json.dumps({"claims": [{"text": "2024年营业收入：120万元", "citations": ["S1"]}]}, ensure_ascii=False)
+    monkeypatch.setattr(workflow, "_request_model_answer", lambda state: raw)
+    store = FakeStore({2024: "2024年营业收入：120万元\n2023年营业收入：100万元"}, bind_year=False)
+    result = run(store, "2023年营业收入是多少")
+    assert result["status"] == "complete"
+    assert result["metrics"]["answer_mode"] == "extractive"
+    assert result["trace"][-1]["status"] == "fallback"

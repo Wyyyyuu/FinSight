@@ -140,7 +140,7 @@ def _simple_header(line: str) -> list[int | None] | None:
     return [int(token.group("year")) if token.group("year") else None for token in tokens]
 
 
-def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str]) -> tuple[list[dict[str, Any]], list[str]]:
+def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str], years: list[int] | None = None) -> tuple[list[dict[str, Any]], list[str]]:
     facts: list[dict[str, Any]] = []
     ambiguous: list[str] = []
     for hit in hits:
@@ -226,6 +226,8 @@ def _extract_facts(hits: list[dict[str, Any]], metric_names: list[str]) -> tuple
     # Different reported values can be restatements or scope changes. Do not pick one arbitrarily.
     groups: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
     for fact in facts:
+        if years is not None and fact["year"] not in years:
+            continue
         groups.setdefault((fact["company"], fact["metric"], fact["year"]), []).append(fact)
     clean: list[dict[str, Any]] = []
     for (company, metric, year), items in groups.items():
@@ -342,7 +344,8 @@ def _request_model_answer(state: AnalysisState) -> str | None:
                                          "只能使用本次 evidence 与 calculations，禁止外部常识补充、投资建议或自行计算。"
                                          "每条事实必须引用 [S数字]。为保证可验证性，请返回 JSON："
                                          '{"claims":[{"text":"从证据逐字摘取的完整原文片段","citations":["S1"]}]}。'
-                                         "text 必须是所引证据中的连续原文，不要改写，不要添加说明；最多六条。"},
+                                         "text 必须是所引证据中的连续原文，保留完整年份、金额单位和年度表头，覆盖所问指标及年度。"
+                                         "若问题询问原因，必须包含对应公司和年度的原因原文。不要改写，不要添加说明；最多六条。"},
                                                   {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]})
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
@@ -361,6 +364,7 @@ def _validate_model_answer(raw: str, state: AnalysisState) -> str:
     lines = ["回答方式：模型辅助选取原文证据（逐条核验引用）。"]
     cited_labels: set[str] = set()
     claim_texts: list[str] = []
+    claim_sources: list[dict[str, Any]] = []
     for claim in claims:
         content, labels = claim.get("text"), claim.get("citations")
         if not isinstance(content, str) or len(content.strip()) < 4 or not isinstance(labels, list) or not labels:
@@ -371,14 +375,25 @@ def _validate_model_answer(raw: str, state: AnalysisState) -> str:
             raise ValueError("model_unsupported_claim")
         cited_labels.update(labels)
         claim_texts.append(content)
+        claim_sources.extend({**sources[label], "text": content} for label in labels)
         lines.append(f"- {content} " + " ".join(f"[{label}]" for label in dict.fromkeys(labels)))
-    covered_years = {fact["year"] for fact in state["facts"] if fact["citation"] in cited_labels}
+    claim_facts, _ = _extract_facts(claim_sources, state["metric_names"], state["years"])
+    covered_years = {fact["year"] for fact in claim_facts}
     if not state["metric_names"]:
         covered_years.update(sources[label]["year"] for label in cited_labels)
     if not set(state["years"]) <= covered_years:
         raise ValueError("model_missing_year")
     if any(not any(alias in "\n".join(claim_texts) for alias in METRICS[metric]) for metric in state["metric_names"]):
         raise ValueError("model_missing_metric")
+    required_facts = {(fact["company"], fact["metric"], fact["year"], fact["value"]) for fact in state["facts"]}
+    supplied_facts = {(fact["company"], fact["metric"], fact["year"], fact["value"]) for fact in claim_facts}
+    if not required_facts <= supplied_facts:
+        raise ValueError("model_missing_fact")
+    if state["causal"]:
+        causal_claims = [sentence for text in claim_texts for sentence in re.split(r"[。！？\n]", text) if CAUSAL_RE.search(sentence)]
+        if not causal_claims or any(not any(any(alias in sentence for alias in METRICS[metric]) for sentence in causal_claims)
+                                    for metric in state["metric_names"]):
+            raise ValueError("model_missing_causal_evidence")
     # Deterministic arithmetic remains visible and is never replaced by generated numbers.
     deterministic = _render_extractive(state)
     if "确定性计算：" in deterministic:
@@ -423,7 +438,7 @@ def build_analysis_graph(store: ReportStore):
 
     def assess(state: AnalysisState) -> dict[str, Any]:
         hits = state["hits"]
-        facts, ambiguous = _extract_facts(hits, state["metric_names"])
+        facts, ambiguous = _extract_facts(hits, state["metric_names"], state["years"])
         present = {fact["year"] for fact in facts} if state["metric_names"] else {hit["year"] for hit in hits}
         missing = sorted(set(state["years"]) - present)
         gaps: list[str] = []
@@ -454,7 +469,9 @@ def build_analysis_graph(store: ReportStore):
                         if causal_sentences and not any(any(alias in sentence for alias in aliases) for sentence in relevant):
                             gaps.append(f"未找到直接解释{metric}变动原因的 {company} {year}年原文；其他年度或事项的原因不能替代")
         gaps.extend(_topic_gaps(state))
-        gaps.extend(ambiguous)
+        # An unreadable, unrelated retrieved row does not invalidate a complete, unambiguous
+        # set of facts. Conflicting values for a requested fact remain a hard evidence gap.
+        gaps.extend(warning for warning in ambiguous if "有冲突数值" in warning)
         return {"facts": facts, "gaps": list(dict.fromkeys(gaps)), "missing_years": missing, "ambiguous": ambiguous,
                 "trace": _event(state, "assess", "insufficient_evidence" if gaps else "complete",
                                 "；".join(gaps) if gaps else "所需年度、指标和引用证据齐备")}
@@ -463,7 +480,7 @@ def build_analysis_graph(store: ReportStore):
         return "supplement" if state["gaps"] and state["retries"] < state["max_retries"] else "calculate"
 
     def supplement(state: AnalysisState) -> dict[str, Any]:
-        queries = list(state["metric_names"])
+        queries = [f"{metric} 主要会计数据 财务指标" for metric in state["metric_names"]]
         if state["causal"]:
             queries.append(" ".join(state["metric_names"]) + " 变动原因 主要系")
         if not queries:
@@ -579,6 +596,7 @@ def analyze_reports(store: ReportStore, question: str, document_ids: list[str], 
                         "requested_years": state["years"], "missing_years": state["missing_years"],
                         "document_year_filter": state["document_years"],
                         "evidence_gaps": state["gaps"], "evidence_count": len(state["hits"]),
+                        "extraction_warnings": state["ambiguous"],
                         "fact_count": len(state["facts"]), "retries": state["retries"],
                         "retrieval_calls": state["retrieval_calls"], "model_error": state["model_error"],
                         "elapsed_ms": round((time.monotonic() - started) * 1000, 2)}}
