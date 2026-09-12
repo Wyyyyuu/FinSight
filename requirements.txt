@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # FinSight AI - 智能金融分析系统
 # 基于 LangChain + LangGraph 的对话式 Agent 实现
 
