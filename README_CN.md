@@ -4,6 +4,8 @@
 
 <h1 align="center">FinSight AI</h1>
 
+> **本 fork 新增：中文年报证据分析工作台。** 上传 PDF/TXT/Markdown，按所选资料进行中文混合检索、LangGraph 有界补查、跨年金额核验和逐页引用。独立运行不依赖行情服务，详见 [启动与验证说明](docs/ANNUAL_REPORTS.md)。原项目作者与 MIT 协议保留；下面的在线演示链接属于上游项目。
+
 <p align="center">
   <strong>基于 LangGraph 的多智能体金融研究平台</strong>
 </p>

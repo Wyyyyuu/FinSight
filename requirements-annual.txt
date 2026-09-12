@@ -1,0 +1,12 @@
+# Isolated annual-report runtime, compatible with the main FinSight stack.
+fastapi==0.122.0
+uvicorn==0.38.0
+python-multipart==0.0.32
+pypdf==4.2.0
+langgraph==1.0.7
+langgraph-prebuilt==1.0.8
+langchain-core==1.2.7
+langgraph-checkpoint==3.0.0
+httpx==0.28.1
+fastembed==0.8.0
+pytest>=8,<10

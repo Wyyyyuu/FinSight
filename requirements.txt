@@ -79,6 +79,7 @@ ragas>=0.2.0
 
 # FastAPI & Web Server
 fastapi==0.122.0
+python-multipart==0.0.32
 uvicorn[standard]==0.38.0
 APScheduler==3.10.4
 

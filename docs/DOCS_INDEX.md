@@ -5,6 +5,7 @@
 
 ## 当前必读
 
+- [中文年报证据分析工作台](ANNUAL_REPORTS.md)：本 fork 的新增主线，含独立启动、真实语义检索、API、来源绑定和验证边界。
 - `README.md` / `readme_cn.md`：项目入口与当前 evidence-first 请求链路概览。
 - `docs/01_ARCHITECTURE.md`：当前系统架构入口，描述主模块、数据流、`ReplyContract` lane、`IntentContract` evidence-first 意图模型、作用域化记忆和 evidence/tool diagnostics 边界。
 - `docs/LANGGRAPH_FLOW.md`：当前 LangGraph 请求链路和 request-frame / intent-contract / coverage-validator 的运行边界。

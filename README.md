@@ -4,6 +4,8 @@
 
 <h1 align="center">FinSight AI</h1>
 
+> **This fork adds a Chinese annual-report evidence workspace:** PDF/TXT/Markdown ingestion, scoped hybrid retrieval, a bounded LangGraph workflow, source-bound calculations, and page-level citations. See the [setup and validation guide](docs/ANNUAL_REPORTS.md). Upstream attribution and the MIT license are preserved; the live demo below belongs to the upstream project.
+
 <p align="center">
   <strong>Multi-Agent Financial Research Platform powered by LangGraph</strong>
 </p>

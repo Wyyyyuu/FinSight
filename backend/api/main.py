@@ -45,6 +45,7 @@ from backend.api.tools_router import create_tools_router
 from backend.api.skills_router import create_skills_router
 from backend.api.agents_router import create_agents_router
 from backend.api.user_router import UserRouterDeps, create_user_router
+from backend.api.annual_report_router import annual_report_router
 from backend.contracts import CHAT_RESPONSE_SCHEMA_VERSION, SSE_EVENT_SCHEMA_VERSION, contract_manifest
 from backend.metrics import METRICS_ENABLED, metrics_payload
 from backend.conversation.context import ContextManager
@@ -1086,7 +1087,7 @@ async def security_gate(request: Request, call_next):
             return JSONResponse(status_code=503, content={"detail": "API auth enabled but no keys configured"})
         api_key = _extract_api_key(request)
         if not api_key or api_key not in keys:
-            if request.url.path.startswith("/diagnostics/rag"):
+            if request.url.path.startswith(("/diagnostics/rag", "/api/annual-reports")):
                 try:
                     user_identity = _require_rag_read_access(request)
                     request.state.rag_authenticated_user = user_identity
@@ -1094,6 +1095,17 @@ async def security_gate(request: Request, call_next):
                     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
             else:
                 return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+
+    # Uploaded reports use authenticated workspace identity, never a caller's
+    # document/session ID. The router itself restricts unconfigured mode to local.
+    if request.url.path.startswith("/api/annual-reports") and (
+        _is_supabase_auth_configured() or _is_rag_observability_dev_auth_enabled()
+        or _is_internal_api_key_authorized(request)
+    ):
+        try:
+            request.state.rag_authenticated_user = _require_rag_read_access(request)
+        except HTTPException as exc:
+            return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     # 解析客户端标识（限流 + 并发限制共用）——必须用真实 IP（Cloudflare/代理感知）
     request_identity = getattr(request.state, "rag_authenticated_user", None)
@@ -1351,6 +1363,7 @@ app.include_router(portfolio_router)
 app.include_router(monitor_router)
 app.include_router(rebalance_router)
 app.include_router(morning_brief_router)
+app.include_router(annual_report_router)
 # 閸氼垰濮╅崗銉ュ經
 if __name__ == "__main__":
     uvicorn.run("backend.api.main:app", host="0.0.0.0", port=8000, reload=True)
