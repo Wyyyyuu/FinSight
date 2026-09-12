@@ -27,7 +27,7 @@ from backend.annual_reports.crawler import (
 
 def save_comparison(path: Path, analyses: list[dict]) -> None:
     """Summarize only calculated values; attach each operand's own PDF page."""
-    lines = ["# 年报数据对比", "", "以下金额单位为人民币亿元；同比由原文金额计算。证据不足的结果保留缺口，未据此给出投资建议。", "",
+    lines = ["# 年报数据对比", "", "以下金额单位为人民币亿元；同比由原文金额计算。上年数据采用所选年报中的比较口径，证据不足时保留缺口。", "",
              "| 公司 | 指标 | 年度 | 上年金额 | 本年金额 | 同比 | 年报来源 |",
              "|---|---|---|---:|---:|---:|---|"]
     for analysis in analyses:
@@ -158,6 +158,9 @@ def main(argv: list[str] | None = None) -> int:
         if completed_analyses:
             comparison_path = args.output_dir / f"comparison-{run_id}.md"
             save_comparison(comparison_path, completed_analyses)
+            (args.output_dir / "comparison-latest.md").write_text(
+                comparison_path.read_text(encoding="utf-8"), encoding="utf-8",
+            )
             manifest["comparison_path"] = str(comparison_path.resolve())
             write_json(manifest_path, manifest)
             print(f"对比报告：{comparison_path.resolve()}", flush=True)

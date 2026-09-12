@@ -86,7 +86,7 @@ $env:ANNUAL_REPORT_MODEL_CACHE = Join-Path (Get-Location) '.annual-models'
 - `<股票代码>/<年度>/<公告编号>.pdf`：原始年报；同名 `.source.json` 记录来源。
 - `manifest-<时间>.json`：公告标题、发布日期、来源 URL、首次下载时间、再次核验时间、SHA256、文档 ID、失败记录。
 - `analysis-<股票代码>-<时间>.json/.md`：实际 LangGraph 逐公司分析结果，保留证据缺口和原始引用。
-- `comparison-<时间>.md`：按计算结果生成的跨公司对照表，含每个数值的 PDF 页码链接。
+- `comparison-<时间>.md`：按计算结果生成的跨公司对照表，含每个数值的 PDF 页码链接；`comparison-latest.md` 为最近一次输出。
 
 重复运行复用已有 PDF 和数据库文档，重新核验内容并保留首次下载时间。没有旧来源记录的历史缓存，其首次下载时间留空。抓取和入库成功不代表分析成功：任何下载/导入失败、证据不足或语义检索降级，脚本均返回非零退出码，已有成功结果保留。
 
@@ -97,6 +97,12 @@ $env:ANNUAL_REPORT_MODEL_CACHE = Join-Path (Get-Location) '.annual-models'
 | 格力电器 000651 | 2024 | 248 | [巨潮 PDF](https://static.cninfo.com.cn/finalpage/2025-04-28/1223330631.PDF) |
 | 海尔智家 600690 | 2024 | 247 | [巨潮 PDF](https://static.cninfo.com.cn/finalpage/2025-03-28/1222926246.PDF) |
 | 海信家电 000921 | 2024 | 243 | [巨潮 PDF](https://static.cninfo.com.cn/finalpage/2025-03-29/1222945858.pdf) |
+
+本轮真实验证：新增 738 页、4,199 个文档块，已与原有美的年报一同出现在页面资料库。三家公司逐公司 hybrid 分析均为 `complete`，再与美的联合分析得到 8 项同比；共核验逐公司/联合结果中的 14 项计算，金额、年度及引用页绑定全部符合原文。重复采集复用三个原始 PDF，三个入库响应均为 `deduplicated=true`。本机记录见 `data/annual_reports/collected/collection-verification.json`，含解释的四公司对比见同目录 `家电行业2024年报对比.md`。
+
+新检索流程按公司和报告年度分别召回，避免单家公司占满结果；最多 120 次检索、480 条证据。读取跨行指标名、表头百分比单位时保持严格匹配；必要的表头/单位/年度信息仅从同一原页恢复，不重写旧分块与向量。海尔复杂调整表仍拒绝猜测，通过第 41 页明确的本期/上年同期表读取金额，其 2023 年数值采用 2024 年报的调整后比较口径。
+
+本轮集成后 `tests/annual_reports` 共 **206 项通过**，模块与 API 覆盖率 **92.50%**，Ruff 通过；原美的真实 PDF 验收仍为 3/3 用例、46/46 断言通过。浏览器实际连接本机后端，已验证四公司联合分析显示“证据充分 / 混合检索”及 8 项同比。以上为四份实际报告的验证，不代表通用业务准确率。
 
 ### 页面分析
 
