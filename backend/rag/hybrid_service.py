@@ -17,8 +17,11 @@ from backend.rag.embedder import (
     EmbeddingService,
     SparseVector,
     get_embedding_service,
+    validate_embedding_result,
 )
 from backend.rag.layering import collection_details, enrich_metadata
+from backend.rag.lexical import VERSION as LEXICAL_VERSION, lexical_tokens, lexical_sparse, lexical_query
+from backend.rag.bm25 import BM25Index
 
 logger = logging.getLogger(__name__)
 
@@ -423,6 +426,7 @@ class _InMemoryHybridStore:
         self._embedder = embedder or get_embedding_service()
         self._lock = threading.Lock()
         self._docs: dict[tuple[str, str], dict[str, Any]] = {}
+        self._lexical_mode = os.getenv("RAG_LEXICAL_MODE", "legacy").strip().lower()
 
     def ingest_documents(self, docs: Iterable[RAGDocument]) -> dict[str, Any]:
         indexed = 0
@@ -445,10 +449,17 @@ class _InMemoryHybridStore:
         if pending:
             contents = [item[2] for item in pending]
             embed_result = self._embedder.encode(contents)
+            profile = validate_embedding_result(embed_result, len(contents))
             with self._lock:
+                for key, _payload, _content in pending:
+                    previous = self._docs.get(key, {}).get("metadata", {}).get("_embedding_profile")
+                    if key in self._docs and previous != profile:
+                        raise ValueError("Embedding profile changed or unknown; use an isolated collection for reindexing")
                 for index, (key, payload, _content) in enumerate(pending):
+                    payload["metadata"]["_embedding_profile"] = profile
                     payload["embedding"] = embed_result.dense[index]
                     payload["sparse"] = embed_result.sparse[index]
+                    payload["lexical_sparse"] = lexical_sparse(_content)
                     self._docs[key] = payload
                     indexed += 1
 
@@ -475,17 +486,34 @@ class _InMemoryHybridStore:
         if not docs:
             return []
 
-        q_dense, q_sparse = _embed_text(query_text, self._embedder)
+        query_result = self._embedder.encode([query_text])
+        profile = validate_embedding_result(query_result, 1)
+        q_dense, q_sparse = query_result.dense[0], query_result.sparse[0]
+        cjk = self._lexical_mode == "cjk"
+        if cjk:
+            q_sparse = lexical_sparse(query_text)
 
         dense_scored: list[tuple[str, float]] = []
         sparse_scored: list[tuple[str, float]] = []
+        bm25_scores = (BM25Index([d["content"] for d in docs]).scores(query_text)
+                       if self._lexical_mode == "bm25" else None)
         by_source: dict[str, dict[str, Any]] = {}
-        for payload in docs:
+        for index, payload in enumerate(docs):
             source_id = payload["source_id"]
             by_source[source_id] = payload
-            dense_scored.append((source_id, _cosine(q_dense, payload["embedding"])))
+            compatible = payload["metadata"].get("_embedding_profile") == profile
+            if compatible:
+                dense_scored.append((source_id, _cosine(q_dense, payload["embedding"])))
+            # Learned sparse token IDs are model-specific too. Unknown rows can
+            # still use raw-text lexical matching, without comparing vector spaces.
             doc_sparse = payload.get("sparse", SparseVector())
-            sparse_scored.append((source_id, _sparse_score(q_sparse, doc_sparse)))
+            lexical_q = q_sparse
+            if cjk or not compatible:
+                doc_sparse = payload.get("lexical_sparse") or lexical_sparse(payload["content"])
+                lexical_q = lexical_sparse(query_text)
+            score = bm25_scores[index] if bm25_scores is not None else _sparse_score(lexical_q, doc_sparse)
+            # Memory backend ablations: learned sparse (legacy), BM25, or dense-only.
+            sparse_scored.append((source_id, 0.0 if self._lexical_mode == "dense_only" else score))
 
         dense_sorted = sorted(dense_scored, key=lambda item: item[1], reverse=True)
         sparse_sorted = sorted(sparse_scored, key=lambda item: item[1], reverse=True)
@@ -495,23 +523,18 @@ class _InMemoryHybridStore:
         dense_score_map = dict(dense_scored)
         sparse_score_map = dict(sparse_scored)
 
-        scope_boost: dict[str, float] = {
-            "persistent": 0.15,
-            "medium_ttl": 0.05,
-            "ephemeral": 0.0,
-        }
-
         fused: list[dict[str, Any]] = []
         for sid, payload in by_source.items():
             d_rank = dense_rank.get(sid)
             s_rank = sparse_rank.get(sid)
+            if d_rank is None and s_rank is None:
+                continue
             rrf = 0.0
             if d_rank is not None:
                 rrf += 1.0 / (self._rrf_k + d_rank)
             if s_rank is not None:
                 rrf += 1.0 / (self._rrf_k + s_rank)
             scope = payload.get("scope", "ephemeral")
-            rrf += scope_boost.get(scope, 0.0)
             fused.append(
                 {
                     "source_id": sid,
@@ -533,6 +556,8 @@ class _InMemoryHybridStore:
                     "created_at": payload.get("created_at"),
                     "expires_at": payload.get("expires_at"),
                     "dense_score": dense_score_map.get(sid, 0.0),
+                    "query_embedding_profile": profile,
+                    "dense_compatible": payload["metadata"].get("_embedding_profile") == profile,
                     "sparse_score": sparse_score_map.get(sid, 0.0),
                     "dense_rank": d_rank,
                     "sparse_rank": s_rank,
@@ -606,6 +631,7 @@ class _PostgresHybridStore:
         self._vector_dim = vector_dim
         self._rrf_k = rrf_k
         self._embedder = embedder or get_embedding_service()
+        self._lexical_mode = os.getenv("RAG_LEXICAL_MODE", "legacy").strip().lower()
         self._engine = create_engine(dsn, future=True, pool_pre_ping=True)
         self._schema_ready = False
         self._schema_lock = threading.Lock()
@@ -731,7 +757,7 @@ class _PostgresHybridStore:
             ) VALUES (
                 :collection, :layer, :entity_scope, :entity_key, :scope, :source_id, :content, :title, :url, :source,
                 :ingest_source, :promotion_status, :doc_fingerprint, :parent_collection, :parent_run_id, CAST(:metadata AS jsonb),
-                CAST(:embedding AS vector), to_tsvector('simple', :content), :created_at, :expires_at
+                CAST(:embedding AS vector), to_tsvector('simple', :search_content), :created_at, :expires_at
             )
             ON CONFLICT (collection, source_id)
             DO UPDATE SET
@@ -753,6 +779,7 @@ class _PostgresHybridStore:
                 search_vector = EXCLUDED.search_vector,
                 created_at = EXCLUDED.created_at,
                 expires_at = EXCLUDED.expires_at
+            WHERE rag_documents_v2.metadata->>'_embedding_profile' = EXCLUDED.metadata->>'_embedding_profile'
             """
         )
         pending: list[dict[str, Any]] = []
@@ -769,6 +796,7 @@ class _PostgresHybridStore:
         if pending:
             contents = [payload["content"] for payload in pending]
             embed_result = self._embedder.encode(contents)
+            profile = validate_embedding_result(embed_result, len(contents))
             if int(embed_result.dim or 0) != int(self._vector_dim):
                 raise ValueError(
                     _vector_dim_mismatch_message(
@@ -780,7 +808,9 @@ class _PostgresHybridStore:
                 )
             with self._engine.begin() as conn:
                 for index, payload in enumerate(pending):
-                    conn.execute(
+                    payload["metadata"]["_embedding_profile"] = profile
+                    payload["metadata"]["_lexical_version"] = LEXICAL_VERSION
+                    write_result = conn.execute(
                         sql,
                         {
                             "collection": payload["collection"],
@@ -790,6 +820,7 @@ class _PostgresHybridStore:
                             "scope": payload["scope"],
                             "source_id": payload["source_id"],
                             "content": payload["content"],
+                            "search_content": payload["content"] + " " + " ".join(lexical_tokens(payload["content"])),
                             "title": payload["title"],
                             "url": payload["url"],
                             "source": payload["source"],
@@ -804,6 +835,8 @@ class _PostgresHybridStore:
                             "expires_at": payload["expires_at"],
                         },
                     )
+                    if write_result.rowcount == 0:
+                        raise ValueError("Embedding profile changed or unknown; use an isolated collection for reindexing")
                     indexed += 1
         return {"indexed": indexed, "skipped": skipped}
 
@@ -812,7 +845,9 @@ class _PostgresHybridStore:
         query_text = (query or "").strip()
         if not query_text:
             return []
-        q_dense, _q_sparse = _embed_text(query_text, self._embedder)
+        query_result = self._embedder.encode([query_text])
+        profile = validate_embedding_result(query_result, 1)
+        q_dense = query_result.dense[0]
         if len(q_dense) != int(self._vector_dim):
             raise ValueError(
                 _vector_dim_mismatch_message(
@@ -824,12 +859,14 @@ class _PostgresHybridStore:
             )
         q_emb = _vector_literal(q_dense)
         candidate_k = max(12, int(top_k) * 4)
-        scope_boost_persistent = 0.15
-        scope_boost_medium = 0.05
         sql = text(
             """
             WITH live_docs AS (
-                SELECT *
+                SELECT *, CASE
+                    WHEN :cjk_enabled AND metadata->>'_lexical_version' = :lexical_version
+                    THEN to_tsquery('simple', :lexical_query)
+                    ELSE plainto_tsquery('simple', :query)
+                END AS retrieval_query
                 FROM rag_documents_v2
                 WHERE collection = :collection
                   AND (expires_at IS NULL OR expires_at > now())
@@ -840,6 +877,7 @@ class _PostgresHybridStore:
                     row_number() OVER (ORDER BY embedding <=> CAST(:query_embedding AS vector)) AS dense_rank,
                     1 - (embedding <=> CAST(:query_embedding AS vector)) AS dense_score
                 FROM live_docs
+                WHERE metadata->>'_embedding_profile' = :embedding_profile
                 ORDER BY embedding <=> CAST(:query_embedding AS vector)
                 LIMIT :candidate_k
             ),
@@ -847,11 +885,11 @@ class _PostgresHybridStore:
                 SELECT
                     source_id,
                     row_number() OVER (
-                        ORDER BY ts_rank_cd(search_vector, plainto_tsquery('simple', :query)) DESC
+                        ORDER BY ts_rank_cd(search_vector, retrieval_query) DESC
                     ) AS sparse_rank,
-                    ts_rank_cd(search_vector, plainto_tsquery('simple', :query)) AS sparse_score
+                    ts_rank_cd(search_vector, retrieval_query) AS sparse_score
                 FROM live_docs
-                WHERE search_vector @@ plainto_tsquery('simple', :query)
+                WHERE search_vector @@ retrieval_query
                 ORDER BY sparse_score DESC
                 LIMIT :candidate_k
             ),
@@ -884,12 +922,7 @@ class _PostgresHybridStore:
                 sparse.sparse_rank,
                 sparse.sparse_score,
                 COALESCE(1.0 / (:rrf_k + dense.dense_rank), 0)
-                + COALESCE(1.0 / (:rrf_k + sparse.sparse_rank), 0)
-                + CASE
-                    WHEN d.scope = 'persistent' THEN :scope_boost_persistent
-                    WHEN d.scope = 'medium_ttl' THEN :scope_boost_medium
-                    ELSE 0
-                  END AS rrf_score
+                + COALESCE(1.0 / (:rrf_k + sparse.sparse_rank), 0) AS rrf_score
             FROM ids
             JOIN live_docs d USING (source_id)
             LEFT JOIN dense USING (source_id)
@@ -908,8 +941,10 @@ class _PostgresHybridStore:
                     "candidate_k": candidate_k,
                     "top_k": max(1, int(top_k)),
                     "rrf_k": self._rrf_k,
-                    "scope_boost_persistent": scope_boost_persistent,
-                    "scope_boost_medium": scope_boost_medium,
+                    "embedding_profile": profile,
+                    "cjk_enabled": self._lexical_mode == "cjk",
+                    "lexical_version": LEXICAL_VERSION,
+                    "lexical_query": lexical_query(query_text),
                 },
             ).mappings()
 
@@ -944,6 +979,8 @@ class _PostgresHybridStore:
                         "created_at": row.get("created_at"),
                         "expires_at": row.get("expires_at"),
                         "dense_rank": row.get("dense_rank"),
+                        "query_embedding_profile": profile,
+                        "dense_compatible": metadata.get("_embedding_profile") == profile,
                         "dense_score": float(row.get("dense_score") or 0.0),
                         "sparse_rank": row.get("sparse_rank"),
                         "sparse_score": float(row.get("sparse_score") or 0.0),
@@ -1027,17 +1064,18 @@ class HybridRAGService:
         backend_norm = (backend or "auto").strip().lower()
         dsn = (postgres_dsn or "").strip()
         wants_postgres = backend_norm == "postgres" or (backend_norm == "auto" and bool(dsn))
+        if wants_postgres and os.getenv("RAG_LEXICAL_MODE", "legacy").strip().lower() in {"bm25", "dense_only"}:
+            raise ValueError("RAG_LEXICAL_MODE bm25/dense_only currently requires the memory backend")
 
         requested_embedder = embedder or get_embedding_service()
         explicit_vector_dim = vector_dim > 0
-        explicit_embedding_backend = embedder is not None or bool(str(os.getenv("RAG_EMBEDDING", "")).strip())
         existing_vector_dim = _detect_postgres_vector_dimension(dsn) if wants_postgres and dsn else None
         resolved_embedder = requested_embedder
         if existing_vector_dim is not None:
             resolved_embedder = _resolve_embedder_for_vector_dim(
                 expected_dim=int(existing_vector_dim),
                 current=requested_embedder,
-                allow_auto_switch=not explicit_embedding_backend,
+                allow_auto_switch=False,
             )
 
         effective_dim = resolved_embedder.dim if vector_dim <= 0 else max(16, int(vector_dim))
@@ -1066,7 +1104,6 @@ class HybridRAGService:
         self.vector_dim = int(effective_dim)
         self.rrf_k = max(1, int(rrf_k))
         self.backend_name = "memory"
-        self.embedding_model = self._embedder.model_name
         # embedding 层降级（请求 bge-m3 但 FlagEmbedding 不可用，实际退回 hash）也要诚实暴露。
         # 用 embedder 自身的降级标记作为 fallback_reason 的初始值；后续 postgres 降级原因会拼接而非覆盖。
         self.fallback_reason: Optional[str] = getattr(self._embedder, "fallback_reason", None)
@@ -1148,10 +1185,25 @@ class HybridRAGService:
         )
 
     def ingest_documents(self, docs: Iterable[RAGDocument]) -> dict[str, Any]:
-        return self._store.ingest_documents(docs)
+        try:
+            return self._store.ingest_documents(docs)
+        finally:
+            self._refresh_embedding_diagnostics()
+
+    @property
+    def embedding_model(self) -> str:
+        return self._embedder.model_name
+
+    def _refresh_embedding_diagnostics(self) -> None:
+        reason = getattr(self._embedder, "fallback_reason", None)
+        if reason:
+            self.fallback_reason = _merge_fallback_reason(self.fallback_reason, reason)
 
     def hybrid_search(self, query: str, *, collection: str, top_k: int = 6) -> list[dict[str, Any]]:
-        hits = self._store.hybrid_search(query, collection=collection, top_k=max(1, int(top_k)))
+        try:
+            hits = self._store.hybrid_search(query, collection=collection, top_k=max(1, int(top_k)))
+        finally:
+            self._refresh_embedding_diagnostics()
         return [_decorate_search_hit(hit) for hit in list(hits or [])]
 
     def hybrid_search_many(self, query: str, *, collections: Iterable[str], top_k: int = 6) -> list[dict[str, Any]]:

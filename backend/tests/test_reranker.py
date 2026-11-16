@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from backend.rag.reranker import RerankerService
+import pytest
 
 
 def test_reranker_disabled_returns_original_order():
@@ -40,3 +41,24 @@ def test_reranker_top_n_clipping():
     docs = [{"content": f"doc {i}", "source_id": str(i)} for i in range(10)]
     result = svc.rerank("query", docs, top_n=3)
     assert len(result) == 3
+
+
+@pytest.mark.parametrize("scores", [[1.0], [float("nan"), 1.0]])
+def test_invalid_reranker_output_preserves_candidates(monkeypatch, scores):
+    svc = RerankerService(force_backend="bge-reranker-onnx")
+    monkeypatch.setattr(svc, "_check_available", lambda: True)
+    monkeypatch.setattr(svc, "_predict_onnx", lambda query, documents: scores)
+    docs = [{"content": "first", "source_id": "a"}, {"content": "second", "source_id": "b"}]
+    assert svc.rerank("query", docs, top_n=2) == docs
+
+
+def test_onnx_reranker_sorts_without_losing_source_metadata(monkeypatch):
+    svc = RerankerService(force_backend="bge-reranker-onnx")
+    monkeypatch.setattr(svc, "_check_available", lambda: True)
+    monkeypatch.setattr(svc, "_predict_onnx", lambda query, documents: [-2.0, 3.0])
+    docs = [{"content": "noise", "source_id": "a"},
+            {"content": "evidence", "source_id": "b", "metadata": {"url": "https://example.org"}}]
+    ranked = svc.rerank("query", docs, top_n=1)
+    assert ranked[0]["source_id"] == "b"
+    assert ranked[0]["metadata"] == docs[1]["metadata"]
+    assert "rerank_score" not in docs[1]

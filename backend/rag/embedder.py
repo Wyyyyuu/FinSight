@@ -8,7 +8,10 @@ legacy SHA-1 hash embedding for CI / lightweight dev environments.
 Environment variables
 ---------------------
 RAG_EMBEDDING
-    ``bge-m3`` (default) or ``hash`` to force the hash fallback.
+    ``bge-m3`` (default), ``bge-m3-http`` for the Docker service, or ``hash``.
+RAG_EMBEDDING_URL
+    Docker embedding service URL, default ``http://127.0.0.1:8010``.
+    The HTTP backend fails explicitly instead of falling back to hash.
 BGE_M3_DEVICE
     ``cpu`` (default), ``cuda``, ``mps``, etc.
 BGE_M3_MAX_LENGTH
@@ -21,8 +24,9 @@ import logging
 import os
 import re
 import threading
+import requests
 from dataclasses import dataclass, field
-from math import sqrt
+from math import isfinite, sqrt
 from typing import Any, Sequence
 
 logger = logging.getLogger(__name__)
@@ -86,6 +90,23 @@ class EmbeddingResult:
     sparse: list[SparseVector]  # N sparse vectors
     model_name: str = "hash"
     dim: int = _HASH_DIM_DEFAULT
+    # Change when model revision, pooling, preprocessing or truncation changes.
+    revision: str = "v1"
+
+    @property
+    def profile(self) -> str:
+        return f"{self.model_name}:{self.dim}:{self.revision}"
+
+
+def validate_embedding_result(result: EmbeddingResult, count: int) -> str:
+    """Validate actual output, never infer vector identity from installed packages."""
+    if not result.model_name or not result.revision or result.dim <= 0:
+        raise ValueError("Invalid embedding profile")
+    if len(result.dense) != count or len(result.sparse) != count:
+        raise ValueError("Embedding output count mismatch")
+    if any(len(row) != result.dim or not all(isfinite(v) for v in row) for row in result.dense):
+        raise ValueError("Embedding output dimension mismatch or non-finite values")
+    return result.profile
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +177,7 @@ class _BGEM3Wrapper:
             self._model = BGEM3FlagModel(
                 "BAAI/bge-m3",
                 use_fp16=use_fp16,
-                device=self._device,
+                devices=self._device,
             )
             logger.info("bge-m3 loaded successfully.")
             return self._model
@@ -181,7 +202,7 @@ class _BGEM3Wrapper:
             if raw_dense is not None:
                 dense_vecs.append([float(value) for value in raw_dense[idx]])
             else:
-                dense_vecs.append(_hash_embedding(text, _BGE_M3_DIM))
+                raise ValueError("bge-m3 did not return dense vectors")
 
             if raw_sparse is not None:
                 row = raw_sparse[idx]
@@ -195,6 +216,7 @@ class _BGEM3Wrapper:
             sparse=sparse_vecs,
             model_name="bge-m3",
             dim=_BGE_M3_DIM,
+            revision=f"v1-maxlen{self._max_length}",
         )
 
 
@@ -222,14 +244,18 @@ class EmbeddingService:
     def __init__(self, *, force_backend: str | None = None) -> None:
         backend = (force_backend or os.getenv("RAG_EMBEDDING", "bge-m3")).strip().lower()
         self._requested_backend = backend
+        self._remote = backend == "bge-m3-http"
         self._use_bge = backend != "hash"
         self._bge_available: bool | None = None
+        self._failure_reason = "FlagEmbedding unavailable"
         self._hash_dim = int(os.getenv("RAG_HASH_DIM", str(_HASH_DIM_DEFAULT)))
         if not self._use_bge:
             _log_hash_fallback(reason="configured_hash_backend", requested_backend=backend)
 
     @property
     def model_name(self) -> str:
+        if self._remote:
+            return "bge-m3"
         if self._use_bge and self._check_bge():
             return "bge-m3"
         return "hash"
@@ -241,7 +267,7 @@ class EmbeddingService:
         仅当用户期望真实向量模型（bge-m3）但 FlagEmbedding 不可用而退回 hash
         时返回 True；显式配置 RAG_EMBEDDING=hash 时不算降级（用户主动选择）。
         """
-        return self._use_bge and not self._check_bge()
+        return self._use_bge and not self._remote and not self._check_bge()
 
     @property
     def fallback_reason(self) -> str | None:
@@ -249,13 +275,13 @@ class EmbeddingService:
         if self.is_hash_fallback:
             return (
                 f"embedding degraded to hash (requested '{self._requested_backend}', "
-                "FlagEmbedding unavailable)"
+                f"{self._failure_reason})"
             )
         return None
 
     @property
     def dim(self) -> int:
-        if self._use_bge and self._check_bge():
+        if self._use_bge:
             return _BGE_M3_DIM
         return self._hash_dim
 
@@ -282,9 +308,14 @@ class EmbeddingService:
         if not text_list:
             return EmbeddingResult(dense=[], sparse=[], model_name=self.model_name, dim=self.dim)
 
+        if self._remote:
+            return self._encode_remote(text_list)
+
         if self._use_bge and self._check_bge():
             try:
-                return _get_bge_m3().encode(text_list)
+                result = _get_bge_m3().encode(text_list)
+                validate_embedding_result(result, len(text_list))
+                return result
             except Exception as exc:
                 _log_hash_fallback(
                     reason="bge_encode_error",
@@ -293,9 +324,39 @@ class EmbeddingService:
                 )
                 self._hash_dim = _BGE_M3_DIM
                 self._bge_available = False
+                self._failure_reason = f"bge-m3 runtime failure ({type(exc).__name__})"
 
+        if self._use_bge and os.getenv("RAG_REQUIRE_SEMANTIC_EMBEDDING", "").lower() in {"1", "true", "yes"}:
+            raise RuntimeError("Semantic embedding required; hash fallback refused")
         fallback_dim = _BGE_M3_DIM if self._use_bge else self._hash_dim
         return _hash_encode_batch(text_list, fallback_dim)
+
+    def _encode_remote(self, texts: list[str]) -> EmbeddingResult:
+        """Fail closed: unavailable/malformed semantic output must never become hash."""
+        url = os.getenv("RAG_EMBEDDING_URL", "http://127.0.0.1:8010").rstrip("/")
+        combined = None
+        for start in range(0, len(texts), 32):
+            batch = texts[start:start + 32]
+            response = requests.post(url + "/encode", json={"texts": batch}, timeout=(5, 180))
+            response.raise_for_status()
+            data = response.json()
+            if data.get("model") != "bge-m3" or data.get("dim") != _BGE_M3_DIM or not data.get("revision"):
+                raise ValueError("Unexpected remote embedding identity")
+            result = EmbeddingResult(
+                dense=data["dense"], sparse=[SparseVector(row) for row in data["sparse"]],
+                model_name=data["model"], dim=data["dim"], revision=data["revision"],
+            )
+            validate_embedding_result(result, len(batch))
+            if any(not all(isfinite(w) and w >= 0 for w in row.weights.values()) for row in result.sparse):
+                raise ValueError("Invalid remote sparse weights")
+            if combined is None:
+                combined = result
+            else:
+                if combined.profile != result.profile:
+                    raise ValueError("Remote embedding profile changed during batch")
+                combined.dense.extend(result.dense)
+                combined.sparse.extend(result.sparse)
+        return combined
 
     def encode_single(self, text: str) -> tuple[list[float], SparseVector]:
         """Convenience: encode one text, return (dense_vec, sparse_vec)."""

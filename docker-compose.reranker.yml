@@ -1,0 +1,18 @@
+name: finsight-reranker
+services:
+  reranker:
+    build:
+      context: ./deploy/reranker
+    image: finsight-reranker-cuda:local
+    gpus: all
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8011:8011"
+    volumes:
+      - ./experiments/lightrag/models/models--BAAI--bge-reranker-base/snapshots/2cfc18c9415c912f9d8155881c133215df768a70:/model:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8011/health',timeout=5)"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 3m

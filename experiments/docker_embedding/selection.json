@@ -1,0 +1,171 @@
+{
+  "winner": "m3_bm25_rrf",
+  "seal": {
+    "dataset_sha256": "10e15424547d466ebac82821476d5b69213f55947a09c641411b769699c03c6c",
+    "model": {
+      "ready": true,
+      "model": "bge-m3",
+      "dim": 1024,
+      "revision": "5617a9f61b028005a4858fdac845db406aefb181-maxlen512-cpu",
+      "device": "cpu",
+      "max_length": 512
+    },
+    "field": "contextual",
+    "rrf_k": 60,
+    "candidates": 24,
+    "final": 8,
+    "reranker": {
+      "files": {
+        "2cfc18c9415c912f9d8155881c133215df768a70\\config.json": "289adf7ada1eb6b4afa7589a48a032d45a076cf2e46dcdb3b4cabc33be14f708",
+        "2cfc18c9415c912f9d8155881c133215df768a70\\onnx\\model.onnx": "15b9a8c3da82eddf263df571281166e00e9308fe19d077084b642ebfcaf06d2b",
+        "2cfc18c9415c912f9d8155881c133215df768a70\\special_tokens_map.json": "d5469a60db23249c7f8945013d78df30b44b6bf686c6bb4740f4223f77b1b535",
+        "2cfc18c9415c912f9d8155881c133215df768a70\\tokenizer.json": "9eb652ac4e40cc093272bbbe0f55d521cf67570060227109b5cdc20945a4489e",
+        "2cfc18c9415c912f9d8155881c133215df768a70\\tokenizer_config.json": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
+      },
+      "fastembed": "0.8.0",
+      "tokenizers": "0.23.2",
+      "onnxruntime": "1.30.0",
+      "batch_size": 4,
+      "code": "b64cbad2dae3f0bf1ed24c311803d97bd47c14b50d7808a76fb4698bae1742a2"
+    },
+    "code": {
+      "experiments\\docker_embedding\\evaluate.py": "63270c944b8853e958226b369dc8843a6f284761d8fa1792dd9f38f3d0ea8537",
+      "backend\\rag\\embedder.py": "0e0fb0692c399e65aff78bdbf1c6950780dd01abef32597884f6b912140a9c60",
+      "backend\\rag\\bm25.py": "7acec7fb04b583a2a226e8af44d13d0523b492fa79b5c39f9cfdcbedba872de3",
+      "backend\\rag\\lexical.py": "079e46686e6910e3b9e20a57f239fb1b028e88107e36c024db68246045aa148c",
+      "backend\\rag\\evidence_pack.py": "b99f964344ef4c8f18dd55c2f66121aa4e85a2532646d95f908252bbd2782d6c",
+      "experiments\\lightrag\\metrics.py": "d32fd53de532df5783f6b052776cb2b7ebb134f958f5884aff6b5442f9476167",
+      "deploy\\embedding\\server.py": "0efa433dfe8d35a29a34c80573782e1bdd205d163daba9027db5f2fb4c9def54"
+    }
+  },
+  "dev_results": {
+    "hash_legacy": {
+      "top4": {
+        "recall_at_k": 0.47733333333333333,
+        "precision_at_k": 0.1825,
+        "ndcg_at_k": 0.4051999468505956,
+        "all_evidence": 0.39
+      },
+      "top8": {
+        "recall_at_k": 0.6588333333333334,
+        "precision_at_k": 0.13125,
+        "ndcg_at_k": 0.47784102361478975,
+        "all_evidence": 0.59
+      },
+      "top24": {
+        "recall_at_k": 0.8508333333333333,
+        "precision_at_k": 0.06208333333333333,
+        "ndcg_at_k": 0.541754028042755,
+        "all_evidence": 0.81
+      }
+    },
+    "hash_bm25": {
+      "top4": {
+        "recall_at_k": 0.6556666666666666,
+        "precision_at_k": 0.26,
+        "ndcg_at_k": 0.556109115907942,
+        "all_evidence": 0.55
+      },
+      "top8": {
+        "recall_at_k": 0.8041666666666667,
+        "precision_at_k": 0.1675,
+        "ndcg_at_k": 0.6185198886222958,
+        "all_evidence": 0.72
+      },
+      "top24": {
+        "recall_at_k": 0.9625,
+        "precision_at_k": 0.06874999999999999,
+        "ndcg_at_k": 0.6675965516782439,
+        "all_evidence": 0.93
+      }
+    },
+    "m3_dense": {
+      "top4": {
+        "recall_at_k": 0.7095,
+        "precision_at_k": 0.275,
+        "ndcg_at_k": 0.652012467682024,
+        "all_evidence": 0.54
+      },
+      "top8": {
+        "recall_at_k": 0.8463333333333334,
+        "precision_at_k": 0.175,
+        "ndcg_at_k": 0.7098916592998211,
+        "all_evidence": 0.73
+      },
+      "top24": {
+        "recall_at_k": 0.98,
+        "precision_at_k": 0.06999999999999999,
+        "ndcg_at_k": 0.753848949448393,
+        "all_evidence": 0.95
+      }
+    },
+    "m3_sparse_rrf": {
+      "top4": {
+        "recall_at_k": 0.7606666666666667,
+        "precision_at_k": 0.295,
+        "ndcg_at_k": 0.7213028039758649,
+        "all_evidence": 0.61
+      },
+      "top8": {
+        "recall_at_k": 0.9083333333333333,
+        "precision_at_k": 0.1875,
+        "ndcg_at_k": 0.7828386130407666,
+        "all_evidence": 0.82
+      },
+      "top24": {
+        "recall_at_k": 0.985,
+        "precision_at_k": 0.07041666666666667,
+        "ndcg_at_k": 0.810156773223387,
+        "all_evidence": 0.96
+      }
+    },
+    "m3_bm25_rrf": {
+      "top4": {
+        "recall_at_k": 0.7956666666666666,
+        "precision_at_k": 0.3175,
+        "ndcg_at_k": 0.7502251622992272,
+        "all_evidence": 0.66
+      },
+      "top8": {
+        "recall_at_k": 0.93,
+        "precision_at_k": 0.19625,
+        "ndcg_at_k": 0.8065823283184853,
+        "all_evidence": 0.85
+      },
+      "top24": {
+        "recall_at_k": 0.985,
+        "precision_at_k": 0.07041666666666667,
+        "ndcg_at_k": 0.8252340291423655,
+        "all_evidence": 0.96
+      }
+    }
+  },
+  "rule": "max mean recall/complete/nDCG after real24-to8 rerank on dev100; RRF60 fixed",
+  "created": "2026-09-15T04:43:09.988570+00:00",
+  "rerank_results": {
+    "hash_legacy": {
+      "recall_at_k": 0.8283333333333334,
+      "precision_at_k": 0.1775,
+      "ndcg_at_k": 0.7234974784788547,
+      "all_evidence": 0.76
+    },
+    "m3_dense": {
+      "recall_at_k": 0.9366666666666666,
+      "precision_at_k": 0.195,
+      "ndcg_at_k": 0.802595654679532,
+      "all_evidence": 0.85
+    },
+    "m3_sparse_rrf": {
+      "recall_at_k": 0.9366666666666666,
+      "precision_at_k": 0.195,
+      "ndcg_at_k": 0.8019207896094217,
+      "all_evidence": 0.85
+    },
+    "m3_bm25_rrf": {
+      "recall_at_k": 0.9366666666666666,
+      "precision_at_k": 0.195,
+      "ndcg_at_k": 0.8058613024057161,
+      "all_evidence": 0.85
+    }
+  }
+}

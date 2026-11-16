@@ -1,0 +1,27 @@
+name: finsight-embedding
+services:
+  embedding:
+    build:
+      context: ./deploy/embedding
+    image: finsight-flagembedding:local
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 4g
+    ports:
+      - "127.0.0.1:8010:8010"
+    environment:
+      BGE_M3_DEVICE: cpu
+      BGE_M3_REVISION: 5617a9f61b028005a4858fdac845db406aefb181
+      BGE_M3_MAX_LENGTH: "512"
+      BGE_M3_BATCH_SIZE: "4"
+      TORCH_NUM_THREADS: "2"
+    volumes:
+      - embedding_models:/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health',timeout=5)"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 15m
+volumes:
+  embedding_models:

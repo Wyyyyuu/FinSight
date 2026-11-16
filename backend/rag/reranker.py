@@ -7,7 +7,10 @@ Falls back gracefully when the model is unavailable (CI / lightweight envs).
 Environment variables
 ---------------------
 RAG_RERANKER
-    ``bge-reranker`` (default) or ``none`` to disable reranking.
+    ``bge-reranker`` (default), ``bge-reranker-onnx``, ``bge-reranker-http``, or ``none``.
+    ONNX uses fastembed and a separately prepared BAAI/bge-reranker-base cache;
+    it never downloads a model automatically.
+    HTTP calls the local CUDA service at RAG_RERANKER_URL (default port 8011).
 RAG_RERANKER_MAX_LENGTH
     Maximum token length for reranker input. Default ``512``.
 """
@@ -16,6 +19,8 @@ from __future__ import annotations
 import logging
 import os
 import threading
+import requests
+from math import isfinite
 from typing import Any, Sequence
 
 logger = logging.getLogger(__name__)
@@ -97,6 +102,8 @@ class RerankerService:
         self._requested_backend = backend
         self._enabled = backend != "none"
         self._available: bool | None = None
+        self._onnx_model: Any = None
+        self._onnx_lock = threading.Lock()
         if not self._enabled:
             _log_reranker_degraded(
                 reason="configured_none_backend",
@@ -115,17 +122,54 @@ class RerankerService:
             self._available = False
             return False
         try:
-            from sentence_transformers import CrossEncoder  # noqa: F401
+            if self._requested_backend == "bge-reranker-http":
+                self._available = True
+                return True
+            if self._requested_backend == "bge-reranker-onnx":
+                from fastembed.rerank.cross_encoder import TextCrossEncoder  # noqa: F401
+            else:
+                from sentence_transformers import CrossEncoder  # noqa: F401
 
             self._available = True
         except ImportError as exc:
             _log_reranker_degraded(
-                reason="sentence_transformers_unavailable",
+                reason="reranker_dependency_unavailable",
                 detail=str(exc),
                 requested_backend=self._requested_backend,
             )
             self._available = False
         return self._available
+
+    def _predict_onnx(self, query: str, documents: list[str]) -> list[float]:
+        with self._onnx_lock:
+            if self._onnx_model is None:
+                from fastembed.rerank.cross_encoder import TextCrossEncoder
+                self._onnx_model = TextCrossEncoder(
+                    model_name="BAAI/bge-reranker-base",
+                    cache_dir=os.getenv("RAG_RERANKER_CACHE_DIR"),
+                    local_files_only=True,
+                    threads=2,
+                )
+        # Group similarly sized passages to reduce padding and peak CPU memory.
+        # Scores must be restored to input order before attaching source metadata.
+        order = sorted(range(len(documents)), key=lambda i: len(documents[i]))
+        batch_size = max(1, min(32, int(os.getenv("RAG_RERANKER_BATCH_SIZE", "4"))))
+        values = list(self._onnx_model.rerank(query, [documents[i] for i in order], batch_size=batch_size))
+        if len(values) != len(order):
+            raise ValueError("ONNX reranker returned an incomplete batch")
+        scores = [0.0] * len(order)
+        for index, value in zip(order, values):
+            scores[index] = float(value)
+        return scores
+
+    def _predict_remote(self, query: str, documents: list[str]) -> list[float]:
+        url = os.getenv("RAG_RERANKER_URL", "http://127.0.0.1:8011").rstrip("/")
+        response = requests.post(url + "/rerank", json={"query":query,"documents":documents}, timeout=(5,60))
+        response.raise_for_status()
+        data = response.json()
+        if data.get("model") != "bge-reranker-base" or data.get("provider") != "CUDAExecutionProvider":
+            raise ValueError("Unexpected remote reranker model/provider")
+        return [float(value) for value in data["scores"]]
 
     def rerank(
         self,
@@ -145,7 +189,14 @@ class RerankerService:
 
         try:
             pairs = [(query, str(doc.get(content_key) or "")) for doc in doc_list]
-            scores = _get_reranker().predict(pairs)
+            if self._requested_backend == "bge-reranker-http":
+                scores = self._predict_remote(query, [pair[1] for pair in pairs])
+            elif self._requested_backend == "bge-reranker-onnx":
+                scores = self._predict_onnx(query, [pair[1] for pair in pairs])
+            else:
+                scores = _get_reranker().predict(pairs)
+            if len(scores) != len(doc_list) or not all(isfinite(score) for score in scores):
+                raise ValueError("Reranker returned missing or non-finite scores")
             ranked = sorted(zip(doc_list, scores), key=lambda item: item[1], reverse=True)
             return [{**doc, "rerank_score": score} for doc, score in ranked[:top_n]]
         except Exception as exc:

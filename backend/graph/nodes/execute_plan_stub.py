@@ -1731,7 +1731,7 @@ async def execute_plan_stub(state: GraphState) -> dict:
                                 pre_rerank_hits,
                                 top_n=rerank_top_n,
                             )]
-                            reranker_used = True
+                            reranker_used = bool(rag_hits) and all("rerank_score" in hit for hit in rag_hits)
                 except Exception as rerank_exc:
                     logger.debug("Reranker unavailable, using RRF order: %s", rerank_exc)
                     rag_hits = pre_rerank_hits[:rerank_top_n]

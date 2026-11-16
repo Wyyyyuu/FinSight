@@ -238,7 +238,7 @@ def test_cleanup_stale_filings_removes_old_filing_docs():
     assert "fresh_filing" in ids
 
 
-def test_postgres_service_auto_aligns_embedder_to_existing_store_dim(monkeypatch):
+def test_postgres_service_accepts_explicit_compatible_embedder(monkeypatch):
     monkeypatch.delenv("RAG_EMBEDDING", raising=False)
     monkeypatch.setenv("RAG_HASH_DIM", "96")
 
@@ -270,6 +270,7 @@ def test_postgres_service_auto_aligns_embedder_to_existing_store_dim(monkeypatch
         rrf_k=60,
         postgres_dsn="postgresql://demo/test",
         allow_memory_fallback=False,
+        embedder=__import__("backend.rag.embedder", fromlist=["EmbeddingService"]).EmbeddingService(force_backend="hash"),
     )
 
     assert service.backend_name == "postgres"
@@ -318,7 +319,7 @@ def test_bge_requested_hash_fallback_keeps_bge_dimension(monkeypatch):
 
 
 
-def test_hybrid_rag_service_auto_aligns_to_existing_postgres_vector_dim(monkeypatch):
+def test_hybrid_rag_service_never_switches_models_based_only_on_dimension(monkeypatch):
     monkeypatch.delenv("RAG_EMBEDDING", raising=False)
     monkeypatch.setattr("backend.rag.hybrid_service._detect_postgres_vector_dimension", lambda dsn: 96)
 
@@ -351,20 +352,12 @@ def test_hybrid_rag_service_auto_aligns_to_existing_postgres_vector_dim(monkeypa
     monkeypatch.setattr("backend.rag.hybrid_service.get_embedding_service", lambda: _FakeCurrentEmbedder())
     monkeypatch.setattr("backend.rag.hybrid_service._PostgresHybridStore", _FakePostgresStore)
 
-    service = HybridRAGService(
-        backend="postgres",
-        vector_dim=0,
-        rrf_k=60,
-        postgres_dsn="postgresql://example.local/test",
-        allow_memory_fallback=False,
-    )
-
-    assert service.backend_name == "postgres"
-    assert service.vector_dim == 96
-    assert service.embedding_model == "hash"
-    assert captured["vector_dim"] == 96
-    assert captured["embedder_model"] == "hash"
-    assert captured["embedder_dim"] == 96
+    with pytest.raises(ValueError, match="vector dimension mismatch"):
+        HybridRAGService(
+            backend="postgres", vector_dim=0, rrf_k=60,
+            postgres_dsn="postgresql://example.local/test", allow_memory_fallback=False,
+        )
+    assert captured == {}
 
 
 def test_hybrid_rag_service_rejects_explicit_postgres_vector_dim_mismatch(monkeypatch):
