@@ -564,14 +564,14 @@ class BaseFinancialAgent:
                 if call_with == "query":
                     # Search-style: combine ticker + query
                     search_query = f"{ticker} {gap_query}".strip() if gap_query else ticker
-                    result = func(search_query)
+                    result = await asyncio.to_thread(func, search_query)
                 elif call_with == "ticker":
-                    result = func(ticker)
+                    result = await asyncio.to_thread(func, ticker)
                 elif call_with == "positions":
-                    result = func([{"ticker": ticker, "weight": 1.0}])
+                    result = await asyncio.to_thread(func, [{"ticker": ticker, "weight": 1.0}])
                 else:
                     # No-args tools (e.g. get_fred_data)
-                    result = func()
+                    result = await asyncio.to_thread(func)
 
                 # Validate result — only accept str/list/dict (reject mock objects in tests)
                 if result is not None and isinstance(result, (str, list, dict)):
@@ -596,7 +596,7 @@ class BaseFinancialAgent:
                     if search_entry:
                         try:
                             fallback_query = f"{ticker} {gap_query}".strip()
-                            fb_result = search_entry["func"](fallback_query)
+                            fb_result = await asyncio.to_thread(search_entry["func"], fallback_query)
                             if fb_result and isinstance(fb_result, str) and len(fb_result) > 30:
                                 results.append(fb_result)
                                 logger.info("[%s] Fallback search success for: %s", self.AGENT_NAME, gap_desc[:40])

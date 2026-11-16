@@ -478,8 +478,7 @@ def extract_tickers(query: str) -> Dict[str, Any]:
     # 1. Match market indices (longest match first)
     sorted_aliases = sorted(INDEX_ALIASES.keys(), key=len, reverse=True)
     for alias in sorted_aliases:
-        pattern = re.compile(re.escape(alias), re.IGNORECASE)
-        if pattern.search(query_original):
+        if _alias_appears_in_text(query_original, alias):
             ticker = INDEX_ALIASES[alias]
             if ticker not in metadata['tickers']:
                 metadata['tickers'].append(ticker)

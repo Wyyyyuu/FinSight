@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from datetime import datetime, timezone
 import os
 from typing import Any, Dict, List, Optional, Tuple
@@ -105,6 +107,10 @@ class FundamentalAgent(BaseFinancialAgent):
         return bool(payload.get("error"))
 
     async def _initial_search(self, query: str, ticker: str) -> Dict[str, Any]:
+        # Vendor tools are synchronous; keep the execution/SSE loop responsive.
+        return await asyncio.to_thread(self._initial_search_sync, query, ticker)
+
+    def _initial_search_sync(self, query: str, ticker: str) -> Dict[str, Any]:
         cache_key = f"{ticker}:fundamental:financials"
         cached = self.cache.get(cache_key)
         if isinstance(cached, dict):

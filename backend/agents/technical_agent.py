@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 import os
@@ -100,6 +101,10 @@ class TechnicalAgent(BaseFinancialAgent):
         return enriched
 
     async def _initial_search(self, query: str, ticker: str) -> Dict[str, Any]:
+        # Vendor tools are synchronous; keep the execution/SSE loop responsive.
+        return await asyncio.to_thread(self._initial_search_sync, query, ticker)
+
+    def _initial_search_sync(self, query: str, ticker: str) -> Dict[str, Any]:
         cache_key = f"{ticker}:technical:kline"
         cached = self.cache.get(cache_key)
         if isinstance(cached, dict):

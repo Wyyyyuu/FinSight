@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional
 import os
@@ -821,6 +822,10 @@ class NewsAgent(BaseFinancialAgent):
         return False
 
     async def _initial_search(self, query: str, ticker: str) -> List[Any]:
+        # Vendor tools are synchronous; keep the execution/SSE loop responsive.
+        return await asyncio.to_thread(self._initial_search_sync, query, ticker)
+
+    def _initial_search_sync(self, query: str, ticker: str) -> List[Any]:
         cache_key = f"{ticker}:news:24h"
         self._last_event_calendar = {}
         self._last_reliability_summary = {}
@@ -1489,7 +1494,7 @@ class NewsAgent(BaseFinancialAgent):
                 try:
                     finnhub_news = getattr(self.tools, "_fetch_with_finnhub_news", None)
                     if finnhub_news:
-                        news_items = finnhub_news(ticker)
+                        news_items = await asyncio.to_thread(finnhub_news, ticker)
                         if news_items:
                             results.extend(news_items)
                             self.circuit_breaker.record_success("finnhub")
@@ -1534,7 +1539,7 @@ class NewsAgent(BaseFinancialAgent):
                     try:
                         tavily_news = getattr(self.tools, "_search_company_news", None)
                         if tavily_news:
-                            t_results = tavily_news(f"{ticker} stock news")
+                            t_results = await asyncio.to_thread(tavily_news, f"{ticker} stock news")
                             if t_results:
                                 results.extend(t_results)
                                 self.circuit_breaker.record_success("tavily")

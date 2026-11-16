@@ -2375,6 +2375,21 @@ async def understand_request(state: GraphState) -> dict[str, Any]:
     tickers = dedup_tickers(
         [str(t) for t in (ticker_meta.get("tickers") or []) if str(t).strip().upper() not in _NON_ASSET_TOKENS]
     )
+    # Dashboard snapshots contain benchmark/peer symbols and field names; they
+    # are evidence context, not additional research subjects. The bridge defines
+    # the selected symbol (or explicit peers) before constructing the prompt.
+    dashboard_scope_bound = False
+    if ui_context.get("dashboard_deep_dive") is True:
+        override = ui_context.get("tickers_override")
+        if isinstance(override, list):
+            scoped_tickers = dedup_tickers([
+                item.strip() for item in override
+                if isinstance(item, str) and item.strip()
+                and item.strip().upper() not in _NON_ASSET_TOKENS
+            ])
+            if scoped_tickers:
+                tickers = scoped_tickers
+                dashboard_scope_bound = True
     conversation_decision: ConversationDecision | None = None
     contract_mode = intent_contract_mode()
     contract_enforced = contract_mode == "enforce"
@@ -2405,7 +2420,7 @@ async def understand_request(state: GraphState) -> dict[str, Any]:
             tickers=tickers,
             output_mode=output_mode,
         )
-        if query
+        if query and not dashboard_scope_bound
         else []
     )
     if deterministic_request_frames and contract_shadow:

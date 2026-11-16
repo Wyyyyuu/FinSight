@@ -1,10 +1,47 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import asyncio
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+
+def test_dashboard_understanding_keeps_snapshot_symbols_as_context():
+    from backend.dashboard.agent_bridge import DashboardDeepDiveRequest, build_dashboard_deep_dive_execution
+    from backend.graph.nodes.understand_request import understand_request
+
+    execution = build_dashboard_deep_dive_execution(DashboardDeepDiveRequest(
+        symbol='NVDA', tab='overview',
+        dashboard_snapshot={'drawdown': -0.12, 'window': 30, 'benchmark': '^DJI', 'peer': 'MSFT'},
+    ))
+    result = asyncio.run(understand_request({
+        'query': execution.query, 'ui_context': execution.ui_context,
+        'output_mode': execution.output_mode,
+    }))
+    tasks = result['tasks']
+    company_tasks = [task for task in tasks if task.get('tickers')]
+    assert company_tasks
+    assert all(task['tickers'] == ['NVDA'] for task in company_tasks)
+    assert all(task['operation']['name'] != 'compare' for task in company_tasks)
+    for frame in result.get('request_frames', []):
+        assert set(frame.get('subject', {}).get('tickers', [])) <= {'NVDA'}
+
+
+def test_dashboard_understanding_keeps_explicit_peer_scope():
+    from backend.dashboard.agent_bridge import DashboardDeepDiveRequest, build_dashboard_deep_dive_execution
+    from backend.graph.nodes.understand_request import understand_request
+
+    execution = build_dashboard_deep_dive_execution(DashboardDeepDiveRequest(
+        symbol='NVDA', tab='peers', dashboard_snapshot={'peers': [{'symbol': 'AMD'}]},
+    ))
+    result = asyncio.run(understand_request({
+        'query': execution.query, 'ui_context': execution.ui_context,
+        'output_mode': execution.output_mode,
+    }))
+    tasks = result['tasks']
+    assert any(task.get('tickers') == ['NVDA', 'AMD'] and task['operation']['name'] == 'compare' for task in tasks)
 
 
 def test_dashboard_deep_dive_builds_technical_execute_request():

@@ -321,7 +321,7 @@ async def run_graph_pipeline(
         markdown response.
     """
     from backend.graph.event_bus import reset_event_emitter, set_event_emitter
-    from backend.graph.cancellation import reset_cancel_event, set_cancel_event
+    from backend.graph.cancellation import get_cancel_event, reset_cancel_event, set_cancel_event
     from backend.orchestration.trace_emitter import TraceEvent, get_trace_emitter
 
     queue: asyncio.Queue[object] = asyncio.Queue()
@@ -374,6 +374,10 @@ async def run_graph_pipeline(
         await _queue_event(payload)
 
     def _enqueue_trace_event(event: TraceEvent) -> None:
+        # The legacy emitter is process-wide; only accept events produced in
+        # this execution's context, including propagated asyncio.to_thread work.
+        if get_cancel_event() is not cancel_event:
+            return
         if event is None:
             return
         try:
@@ -797,7 +801,7 @@ async def resume_graph_pipeline(
     checkpointed graph via ``runner.resume()``.
     """
     from backend.graph.event_bus import reset_event_emitter, set_event_emitter
-    from backend.graph.cancellation import reset_cancel_event, set_cancel_event
+    from backend.graph.cancellation import get_cancel_event, reset_cancel_event, set_cancel_event
     from backend.orchestration.trace_emitter import TraceEvent, get_trace_emitter
 
     queue: asyncio.Queue[object] = asyncio.Queue()
@@ -831,6 +835,8 @@ async def resume_graph_pipeline(
         await _queue_event(payload)
 
     def _enqueue_trace_event(event: TraceEvent) -> None:
+        if get_cancel_event() is not cancel_event:
+            return
         if event is None:
             return
         try:

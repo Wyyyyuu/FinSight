@@ -3,6 +3,12 @@
 from backend.config.ticker_mapping import extract_tickers, is_probably_ticker
 
 
+def test_index_alias_does_not_match_dashboard_field_names():
+    assert extract_tickers("NVDA snapshot drawdown=-0.12 window=30 downtrend")['tickers'] == ['NVDA']
+    assert '^DJI' in extract_tickers('Compare NVDA with Dow')['tickers']
+    assert '^DJI' in extract_tickers('比较 NVDA 与道琼斯指数')['tickers']
+
+
 def test_is_probably_ticker_accepts_cn_market_suffix_symbol():
     assert is_probably_ticker("600519.SS")
     assert is_probably_ticker("000001.SZ")

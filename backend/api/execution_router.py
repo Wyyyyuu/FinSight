@@ -128,7 +128,11 @@ def _serialize_sse_item(item: object) -> str:
 
 async def _stream_sse_pipeline(pipeline: AsyncIterable[dict[str, Any]]):
     async for event in pipeline:
-        yield f"data: {_serialize_sse_item(event)}\n\n"
+        frame = f"data: {_serialize_sse_item(event)}\n\n".encode("utf-8")
+        # Reports include evidence and can exceed a megabyte. Bound individual
+        # transport writes while preserving one complete SSE/JSON event.
+        for offset in range(0, len(frame), 16 * 1024):
+            yield frame[offset:offset + 16 * 1024]
 
 
 def _sse_response(pipeline: AsyncIterable[dict[str, Any]]) -> StreamingResponse:

@@ -1,4 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
+
+import asyncio
 
 import logging
 import re
@@ -98,6 +100,10 @@ class MacroAgent(BaseFinancialAgent):
         return registry
 
     async def _initial_search(self, query: str, ticker: str) -> Dict[str, Any]:
+        # Vendor tools are synchronous; keep the execution/SSE loop responsive.
+        return await asyncio.to_thread(self._initial_search_sync, query, ticker)
+
+    def _initial_search_sync(self, query: str, ticker: str) -> Dict[str, Any]:
         source_health: Dict[str, str] = {}
         used_sources: List[str] = []
 
