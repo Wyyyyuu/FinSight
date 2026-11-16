@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Dialog } from './ui/Dialog';
+import { navigationVisibility } from '../config/navigation';
 
 interface CommandAction {
   id: string;
@@ -114,7 +115,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({ isOpen, onClose }) => 
           onClose();
         },
       },
-    ],
+    ].filter((action) => action.id !== 'open-workbench' || navigationVisibility.workbench),
     [navigate, onClose, theme, setTheme, setDraft, currentTicker],
   );
 

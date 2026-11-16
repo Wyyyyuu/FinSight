@@ -13,6 +13,31 @@ function sseResponse(events: Array<Record<string, unknown>>): Response {
   return new Response(stream);
 }
 
+describe('public demo conversation identity', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it.each([true, false])('keeps browser conversation stable only in demo mode (%s)', async (demo) => {
+    vi.stubEnv('VITE_PUBLIC_DEMO', String(demo));
+    const clientSession = 'public:anonymous:browser-thread';
+    const serverSession = 'demo:visitor:server-thread';
+    const onDone = vi.fn();
+    const onToken = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseResponse([
+      { type: 'token', content: 'hello' },
+      { type: 'done', session_id: serverSession },
+    ])));
+    await apiClient.sendMessageStream(
+      'hello', onToken, undefined, undefined, onDone,
+      undefined, undefined, undefined, undefined, undefined, undefined, clientSession,
+    );
+    expect(onToken).toHaveBeenCalledWith('hello');
+    expect(onDone.mock.calls[0][2].session_id).toBe(demo ? clientSession : serverSession);
+  });
+});
+
 describe('parseSSEStream', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -117,6 +142,41 @@ describe('parseSSEStream', () => {
   });
 });
 
+describe('execution gateway responses', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    [{ detail: '演示站暂未开放该功能。' }, '演示站暂未开放该功能。'],
+    [{ detail: { message: '会话已过期，请刷新页面。' } }, '会话已过期，请刷新页面。'],
+    [{}, '请求失败（HTTP 403），请稍后重试'],
+  ])('shows the actual denied execution reason', async (payload, message) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 403 })));
+    await expect(apiClient.executeAgent({ query: 'NVDA' }, {}, { endpoint: '/api/dashboard/deep-dive' }))
+      .rejects.toThrow(message);
+  });
+
+  it('reports a denied resume to callback consumers', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: '访客会话已过期' }), { status: 401 })));
+    await expect(apiClient.resumeExecution({ thread_id: 'thread', resume_value: 'yes' }, {}))
+      .rejects.toThrow('访客会话已过期');
+  });
+
+  it('preserves the run correlation and report from deep-dive completion', async () => {
+    const report = { report_id: 'report-1', ticker: 'NVDA', summary: 'Research result' };
+    const onDone = vi.fn();
+    const onThinking = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseResponse([
+      { type: 'pipeline_stage', run_id: 'browser-run', stage: 'planning', status: 'start' },
+      { type: 'done', run_id: 'browser-run', session_id: 'demo:visitor:thread', report },
+    ])));
+    await apiClient.executeAgent({ query: 'NVDA', run_id: 'browser-run' }, { onDone, onThinking }, { endpoint: '/api/dashboard/deep-dive' });
+    expect(onThinking).toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onDone.mock.calls[0][0]).toEqual(report);
+    expect(onDone.mock.calls[0][2].run_id).toBe('browser-run');
+  });
+});
+
 describe('SSE read timeout (P1-2)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -126,7 +186,8 @@ describe('SSE read timeout (P1-2)', () => {
   it('reports a connection error when no data arrives within the read timeout', async () => {
     vi.useFakeTimers();
     // 一个永远不发数据的流，模拟连接挂死（网络断/Tunnel 超时）
-    const stream = new ReadableStream({ start() { /* never enqueue */ } });
+    const cancel = vi.fn();
+    const stream = new ReadableStream({ start() { /* never enqueue */ }, cancel });
     const response = new Response(stream);
     const onError = vi.fn();
     const onDone = vi.fn();
@@ -138,6 +199,7 @@ describe('SSE read timeout (P1-2)', () => {
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onError.mock.calls[0][0]).toContain('连接中断');
     expect(onDone).not.toHaveBeenCalled();
+    expect(cancel).toHaveBeenCalledTimes(1);
   });
 
   it('does not time out while frames keep arriving (heartbeats reset the timer)', async () => {

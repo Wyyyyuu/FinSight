@@ -1,18 +1,20 @@
-﻿import { useState, useCallback, useEffect, type ReactElement } from 'react';
+﻿import { lazy, Suspense, useState, useCallback, useEffect, type ReactElement } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { WorkspaceShell } from './components/layout/WorkspaceShell';
 import { WelcomePage } from './components/welcome/WelcomePage';
-import { Phase24PanelsPage } from './components/labs/Phase24PanelsPage';
 import { ToastProvider } from './components/ui';
 import { RateLimitToastListener } from './components/common/RateLimitToastListener';
+import { DemoNotice } from './components/common/DemoNotice';
 import { CommandPalette } from './components/CommandPalette';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { getSupabaseClient } from './api/supabaseClient';
 import { getRagInspectorDevIdentity, isRagInspectorDevAuthActive } from './auth/devAuth';
-import { RagInspectorPage } from './pages/RagInspectorPage';
-import { CostAuditPage } from './pages/CostAuditPage';
-import { AnnualReportsPage } from './pages/AnnualReportsPage';
 import { buildAnonymousSessionId, buildUserSessionId, useStore } from './store/useStore';
+
+const WorkspaceShell = lazy(() => import('./components/layout/WorkspaceShell').then(({ WorkspaceShell }) => ({ default: WorkspaceShell })));
+const AnnualReportsPage = lazy(() => import('./pages/AnnualReportsPage').then(({ AnnualReportsPage }) => ({ default: AnnualReportsPage })));
+const Phase24PanelsPage = lazy(() => import('./components/labs/Phase24PanelsPage'));
+const RagInspectorPage = lazy(() => import('./pages/RagInspectorPage'));
+const CostAuditPage = lazy(() => import('./pages/CostAuditPage'));
 
 const WELCOME_GATE_KEY = 'finsight-welcome-gate-passed';
 
@@ -240,6 +242,11 @@ function App() {
 
   return (
     <ToastProvider>
+      {import.meta.env.VITE_PUBLIC_DEMO === 'true' ? (
+        <DemoNotice mode="demo" />
+      ) : import.meta.env.VITE_PUBLIC_PREVIEW === 'true' ? (
+        <DemoNotice mode="preview" />
+      ) : null}
       {/* P1-8: 全局 429 限流 toast 提示 */}
       <RateLimitToastListener />
       <a
@@ -249,20 +256,22 @@ function App() {
         跳转到主要内容
       </a>
 
-      <Routes>
-        <Route path="/" element={<RootRedirect />} />
-        <Route path="/welcome" element={<WelcomeRoute />} />
-        <Route path="/chat" element={<EntryGuard><ChatRoute /></EntryGuard>} />
-        <Route path="/workbench" element={<EntryGuard><WorkbenchRoute /></EntryGuard>} />
-        <Route path="/cn-market" element={<EntryGuard><CnMarketRoute /></EntryGuard>} />
-        <Route path="/annual-reports" element={<AnnualReportsPage />} />
-        <Route path="/rag-inspector" element={<AuthenticatedGuard><RagInspectorPage /></AuthenticatedGuard>} />
-        <Route path="/cost-audit" element={<AuthenticatedGuard><CostAuditPage /></AuthenticatedGuard>} />
-        <Route path="/phase-labs" element={<EntryGuard><PhaseLabsRoute /></EntryGuard>} />
-        <Route path="/dashboard" element={<EntryGuard><DashboardRoute /></EntryGuard>} />
-        <Route path="/dashboard/:symbol" element={<EntryGuard><DashboardRoute /></EntryGuard>} />
-        <Route path="*" element={<Navigate to="/welcome" replace />} />
-      </Routes>
+      <Suspense fallback={<div role="status" className="grid min-h-screen place-items-center bg-fin-bg text-sm text-fin-text-secondary">正在加载…</div>}>
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/welcome" element={<WelcomeRoute />} />
+          <Route path="/chat" element={<EntryGuard><ChatRoute /></EntryGuard>} />
+          <Route path="/workbench" element={<EntryGuard><WorkbenchRoute /></EntryGuard>} />
+          <Route path="/cn-market" element={<EntryGuard><CnMarketRoute /></EntryGuard>} />
+          <Route path="/annual-reports" element={<AnnualReportsPage />} />
+          <Route path="/rag-inspector" element={<AuthenticatedGuard><RagInspectorPage /></AuthenticatedGuard>} />
+          <Route path="/cost-audit" element={<AuthenticatedGuard><CostAuditPage /></AuthenticatedGuard>} />
+          <Route path="/phase-labs" element={<EntryGuard><PhaseLabsRoute /></EntryGuard>} />
+          <Route path="/dashboard" element={<EntryGuard><DashboardRoute /></EntryGuard>} />
+          <Route path="/dashboard/:symbol" element={<EntryGuard><DashboardRoute /></EntryGuard>} />
+          <Route path="*" element={<Navigate to="/welcome" replace />} />
+        </Routes>
+      </Suspense>
 
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={handleCloseCommandPalette} />
     </ToastProvider>

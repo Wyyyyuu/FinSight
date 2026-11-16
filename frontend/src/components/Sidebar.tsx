@@ -23,6 +23,7 @@ import { useDashboardStore } from '../store/dashboardStore';
 import { usePortfolioSummary, buildPositionsMap } from '../hooks/usePortfolioSummary';
 import { parseQuotePayload } from '../utils/quote';
 import { useToast } from './ui';
+import { navigationVisibility } from '../config/navigation';
 
 interface QuoteInfo {
   price?: string;
@@ -348,7 +349,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             }}
           />
 
-          <NavItem
+          {navigationVisibility.workbench && <NavItem
             icon={<FileText size={18} />}
             label="工作台"
             testId="sidebar-nav-workbench"
@@ -357,7 +358,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               setActiveTab('workbench');
               onWorkbenchClick?.();
             }}
-          />
+          />}
 
           <NavItem
             icon={<LineChart size={18} />}
@@ -393,7 +394,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             }}
           />
 
-          <NavItem
+          {navigationVisibility.ragInspector && <NavItem
             icon={<Search size={18} />}
             label="RAG 观测"
             testId="sidebar-nav-rag-inspector"
@@ -402,9 +403,9 @@ const Sidebar: React.FC<SidebarProps> = ({
               setActiveTab('rag-inspector');
               navigate('/rag-inspector');
             }}
-          />
+          />}
 
-          <NavItem
+          {navigationVisibility.phaseLabs && <NavItem
             icon={<BarChart2 size={18} />}
             label="实验面板"
             testId="sidebar-nav-phase-labs"
@@ -413,7 +414,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               setActiveTab('phase-labs');
               navigate('/phase-labs');
             }}
-          />
+          />}
 
           <NavItem
             icon={<Bell size={18} />}

@@ -20,6 +20,7 @@ import { DataSourceTrace } from '../components/dashboard/DataSourceTrace';
 import { useStore } from '../store/useStore';
 import { useToast } from '../components/ui';
 import { useMarketQuotes } from '../hooks/useMarketQuotes';
+import { navigationVisibility } from '../config/navigation';
 
 interface DashboardProps {
   initialSymbol?: string;
@@ -209,7 +210,7 @@ export function Dashboard({ initialSymbol, onBackToChat, onSymbolChange, onGoWor
                   >
                     返回对话
                   </button>
-                  {onGoWorkbench && (
+                  {navigationVisibility.workbench && onGoWorkbench && (
                     <button
                       type="button"
                       data-testid="dashboard-go-workbench"

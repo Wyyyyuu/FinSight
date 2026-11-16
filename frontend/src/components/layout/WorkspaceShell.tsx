@@ -9,6 +9,7 @@ import { useStore } from '../../store/useStore';
 import { useIsMobileLayout } from '../../hooks/useIsMobileLayout';
 import { useMarketQuotes } from '../../hooks/useMarketQuotes';
 import { API_BASE_URL } from '../../config/runtime';
+import { fetchWithPublicDemoSession } from '../../api/publicDemoSession';
 import { ChatWorkspace } from './ChatWorkspace';
 import { DashboardWorkspace } from './DashboardWorkspace';
 import { WorkbenchWorkspace } from './WorkbenchWorkspace';
@@ -74,7 +75,7 @@ export function WorkspaceShell({
     let isMounted = true;
     const checkDryRun = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/health`);
+        const res = await fetchWithPublicDemoSession(`${API_BASE_URL}/health`);
         const data = await res.json();
         if (isMounted) setWorkspaceHealth(buildWorkspaceHealthStatus(data));
       } catch {

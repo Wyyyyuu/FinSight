@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CircleAlert, Mail, Moon, Sun } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   getRagInspectorDevIdentity,
   isRagInspectorDevAuthAvailable,
@@ -42,7 +42,6 @@ const CAPABILITIES = [
   '风险评估',
   '深度搜索',
   'RAG 检索',
-  '邮件预警',
 ];
 
 // Aurora 配色语义：数据卡彩色顶边 + 数字色
@@ -95,10 +94,13 @@ export function WelcomePage() {
   const [ragInspectorPassword, setRagInspectorPassword] = useState('');
 
   const isDark = theme === 'dark';
+  const isPublicDemo = import.meta.env.VITE_PUBLIC_DEMO === 'true';
+  const capabilities = [...CAPABILITIES, isPublicDemo ? '年报分析' : '邮件预警'];
   const supabaseReady = useMemo(() => isSupabaseAuthConfigured(), []);
   const isLoggedIn = Boolean(authIdentity?.userId);
   const sessionText = authIdentity?.email || 'GUEST-001';
-  const redirectPath = resolveFallbackPath(new URLSearchParams(location.search).get('from'));
+  const requestedPath = resolveFallbackPath(new URLSearchParams(location.search).get('from'));
+  const redirectPath = isPublicDemo && isAuthenticatedOnlyPath(requestedPath) ? '/chat' : requestedPath;
   const requiresAuthenticatedEntry = isAuthenticatedOnlyPath(redirectPath);
   const devAuthReady = useMemo(() => isRagInspectorDevAuthAvailable(), []);
   const ragAccessDiagnostics = useMemo(
@@ -115,7 +117,7 @@ export function WelcomePage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const tickerItems = useMemo(() => {
+  const { tickerItems, sampleQuotes } = useMemo(() => {
     const parsed = marketQuotes
       .filter((item) => typeof item.price === 'number')
       .map((item) => {
@@ -130,7 +132,7 @@ export function WelcomePage() {
         };
       });
 
-    return parsed.length > 0 ? parsed : FALLBACK_TICKERS;
+    return { tickerItems: parsed.length > 0 ? parsed : FALLBACK_TICKERS, sampleQuotes: parsed.length === 0 };
   }, [marketQuotes]);
 
   const handleAnonymousEnter = () => {
@@ -465,14 +467,16 @@ export function WelcomePage() {
           </div>
 
           <h1 className="max-w-[720px] text-[46px] leading-[1.12] font-extrabold tracking-tight text-[var(--bb-text)] max-[960px]:text-[34px] max-[480px]:text-[26px]">
-            面向实盘研究的
+            {isPublicDemo ? '面向股票与财报研究的' : '面向实盘研究的'}
             <span className="block text-[var(--bb-orange)]">AI 投研工作台</span>
           </h1>
 
           <p className="max-w-[640px] text-[15px] leading-[1.85] text-[var(--bb-text-dim)] max-[480px]:text-sm max-[480px]:leading-7">
             7 个研究智能体并行执行 · 有状态 LangGraph 编排 · 6 个专业仪表盘标签页
             <br />
-            混合 RAG 检索 · 跨智能体冲突检测 · 实时邮件预警
+            {isPublicDemo
+              ? 'A 股市场 · 财报混合检索 · 原文引用核验'
+              : '混合 RAG 检索 · 跨智能体冲突检测 · 实时邮件预警'}
           </p>
 
           <div className="grid grid-cols-3 gap-3.5 max-[960px]:grid-cols-3 max-[480px]:gap-2">
@@ -490,7 +494,7 @@ export function WelcomePage() {
           </div>
 
           <div className="flex flex-wrap gap-2 max-[480px]:hidden">
-            {CAPABILITIES.map((item) => (
+            {capabilities.map((item) => (
               <span
                 key={item}
                 className="rounded-lg border border-[var(--bb-border)] bg-[var(--bb-surface)] px-3 py-1.5 text-[12px] text-[var(--bb-text-dim)] transition-all hover:border-[var(--bb-orange)] hover:bg-[var(--bb-orange-dim)] hover:text-[var(--bb-orange)]"
@@ -516,8 +520,10 @@ export function WelcomePage() {
 
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-[var(--bb-text)]">接入工作台</h2>
-              <p className="mt-1.5 text-sm text-[var(--bb-text-dim)]">匿名本地会话最快；需要跨设备时再登录</p>
+              <h2 className="text-2xl font-bold tracking-tight text-[var(--bb-text)]">{isPublicDemo ? '开始体验' : '接入工作台'}</h2>
+              <p className="mt-1.5 text-sm text-[var(--bb-text-dim)]">
+                {isPublicDemo ? '以访客身份体验投研对话和年报分析。' : '匿名本地会话最快；需要跨设备时再登录'}
+              </p>
             </div>
             <button
               type="button"
@@ -530,7 +536,24 @@ export function WelcomePage() {
             </button>
           </div>
 
-          {isLoggedIn ? (
+          {isPublicDemo ? (
+            <div className="mt-6 space-y-4">
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleAnonymousEnter}
+                className="w-full !rounded-[11px] !bg-[linear-gradient(135deg,var(--bb-orange),var(--bb-blue))] !text-white font-semibold !shadow-[0_8px_20px_-8px_var(--bb-orange)]"
+              >
+                进入投研工作台
+              </Button>
+              <Link
+                to="/annual-reports"
+                className="block rounded-lg px-3 py-2 text-center text-sm font-medium text-[var(--bb-text)] hover:bg-[var(--bb-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--bb-orange)]"
+              >
+                打开年报工作台
+              </Link>
+            </div>
+          ) : isLoggedIn ? (
             <div className="mt-6 space-y-4">
               <div className="rounded-xl border border-[var(--bb-border)] bg-[var(--bb-surface-2)] px-4 py-3 text-sm text-[var(--bb-text-dim)]">
                 当前账号：<span className="font-medium text-[var(--bb-text)]">{authIdentity?.email || '已验证用户'}</span>
@@ -689,6 +712,7 @@ export function WelcomePage() {
       </section>
 
       <div className="relative z-20 h-8 border-t border-[var(--bb-border)] bg-[var(--bb-surface)] overflow-hidden flex items-center">
+        {sampleQuotes && <span className="relative z-10 shrink-0 bg-[var(--bb-surface)] px-3 text-[11px] text-[var(--bb-text-dim)]">示例行情</span>}
         <div className="flex w-max items-center gap-10 px-4 text-[11px] font-mono text-[var(--bb-text-dim)]" style={{ animation: 'finsight-marquee 30s linear infinite' }}>
           {[...tickerItems, ...tickerItems].map((item, index) => (
             <span key={`${item.label}-${index}`} className="whitespace-nowrap">

@@ -1,6 +1,7 @@
 import { buildApiUrl } from '../config/runtime';
 import { getRagInspectorDevAccessToken } from '../auth/devAuth';
 import { getSupabaseClient } from './supabaseClient';
+import { fetchWithPublicDemoSession } from './publicDemoSession';
 import { useStore } from '../store/useStore';
 
 export interface AnnualDocument {
@@ -80,7 +81,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const sessionId = useStore.getState().sessionId;
   if (sessionId) headers.set('X-Session-Id', sessionId);
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
-  const response = await fetch(annualUrl(path), { ...init, headers }).catch((error: unknown) => {
+  const response = await fetchWithPublicDemoSession(annualUrl(path), { ...init, headers }).catch((error: unknown) => {
     if (init.signal?.aborted) throw error;
     throw new Error('暂时无法连接年报服务，请稍后重试。');
   });

@@ -18,6 +18,7 @@ import type {
 import { API_BASE_URL, buildApiUrl } from '../config/runtime';
 import { getRagInspectorDevAccessToken } from '../auth/devAuth';
 import { getSupabaseClient } from './supabaseClient';
+import { fetchWithPublicDemoSession, waitForPublicDemoSession } from './publicDemoSession';
 
 /**
  * Chat Context - 临时上下文（不入库，仅本次请求生效）
@@ -301,6 +302,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
+  await waitForPublicDemoSession(config.signal instanceof AbortSignal ? config.signal : undefined);
   const client = getSupabaseClient();
   let accessToken: string | null = null;
 
@@ -385,13 +387,19 @@ api.interceptors.response.use(
  * 检查流式 fetch 响应，429 时派发限流事件并抛出友好错误。
  * 其他非 2xx 状态抛出通用 HTTP 错误。
  */
-function ensureStreamResponseOk(response: Response): void {
+async function ensureStreamResponseOk(response: Response): Promise<void> {
   if (response.ok) return;
   if (response.status === 429) {
     emitRateLimitEvent(parseRetryAfter(response.headers.get('retry-after')));
     throw new Error('请求过于频繁，服务器限流中，请稍后再试');
   }
-  throw new Error(`HTTP error! status: ${response.status}`);
+  const payload = await response.json().catch(() => null);
+  const message = typeof payload?.detail === 'string'
+    ? payload.detail
+    : payload?.detail?.message ?? payload?.message;
+  throw new Error(typeof message === 'string' && message.trim()
+    ? message
+    : `请求失败（HTTP ${response.status}），请稍后重试`);
 }
 
 // ---------------------------------------------------------------------------
@@ -492,6 +500,9 @@ export async function parseSSEStream(
         readResult = await readWithTimeout();
       } catch (e) {
         if (e instanceof Error && e.message === SSE_READ_TIMEOUT_ERROR) {
+          // Release the network stream so the server can cancel the abandoned
+          // research task instead of continuing after the UI reports failure.
+          await reader.cancel().catch(() => undefined);
           // 中止前再确认一次没有被外部取消
           if (!opts.signal?.aborted) {
             onError?.(
@@ -1230,14 +1241,14 @@ export const apiClient = {
     if (context) body.context = context;
     if (options) body.options = options;
 
-    const response = await fetch(buildApiUrl('/chat/supervisor/stream'), {
+    const response = await fetchWithPublicDemoSession(buildApiUrl('/chat/supervisor/stream'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       signal: opts.signal,
     });
 
-    ensureStreamResponseOk(response);
+    await ensureStreamResponseOk(response);
 
     let sawDone = false;
     let sawError = false;
@@ -1254,7 +1265,13 @@ export const apiClient = {
       if (sawDone || sawError) return;
       clearIdleDoneFallback();
       sawDone = true;
-      onDone?.(report, thinking, meta);
+      // The public gateway namespaces server sessions per signed visitor.
+      // Keep the browser's conversation key stable when the server returns its
+      // internal identifier, or the UI would switch to an empty conversation.
+      const conversationMeta = import.meta.env.VITE_PUBLIC_DEMO === 'true' && sessionId
+        ? { ...meta, session_id: sessionId }
+        : meta;
+      onDone?.(report, thinking, conversationMeta);
     };
 
     const wrappedOnError = (error: string) => {
@@ -1331,14 +1348,14 @@ export const apiClient = {
     callbacks: SSECallbacks,
     opts: ExecuteAgentOptions = {},
   ): Promise<void> {
-    const response = await fetch(buildApiUrl(opts.endpoint ?? '/api/execute'), {
+    const response = await fetchWithPublicDemoSession(buildApiUrl(opts.endpoint ?? '/api/execute'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
       signal: opts.signal,
     });
 
-    ensureStreamResponseOk(response);
+    await ensureStreamResponseOk(response);
 
     let sawDone = false;
     let sawError = false;
@@ -1466,15 +1483,18 @@ export const apiClient = {
     opts?: { traceRawEnabled?: boolean; signal?: AbortSignal },
   ): Promise<Response> {
     const url = buildApiUrl('/api/execute/resume');
-    const response = await fetch(url, {
+    const response = await fetchWithPublicDemoSession(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
       signal: opts?.signal,
     });
 
-    // P1-8: resume 流被限流时同样提示用户（不抛错，保持原有返回 Response 的契约）
-    if (response.status === 429) {
+    // Callback consumers need the actual gateway error instead of a misleading
+    // "missing done" error. Response-only consumers keep their existing contract.
+    if (callbacks) {
+      await ensureStreamResponseOk(response);
+    } else if (response.status === 429) {
       emitRateLimitEvent(parseRetryAfter(response.headers.get('retry-after')));
     }
 

@@ -8,6 +8,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useDashboardStore } from '../store/dashboardStore';
 import type { DashboardResponse } from '../types/dashboard';
 import { buildApiUrl } from '../config/runtime';
+import { fetchWithPublicDemoSession } from '../api/publicDemoSession';
 
 export function useDashboardData(symbol: string | null) {
   const {
@@ -33,16 +34,17 @@ export function useDashboardData(symbol: string | null) {
       setError(null);
 
       try {
-        const response = await fetch(buildApiUrl(`/api/dashboard?symbol=${encodeURIComponent(sym)}`), {
+        const response = await fetchWithPublicDemoSession(buildApiUrl(`/api/dashboard?symbol=${encodeURIComponent(sym)}`), {
           signal: controller.signal,
         });
 
         if (!response.ok) {
           const err = await response
             .json()
-            .catch(() => ({ message: 'Unknown error' }));
+            .catch(() => ({}));
           throw new Error(
-            err?.detail?.message || err?.message || `HTTP ${response.status}`
+            (typeof err?.detail === 'string' ? err.detail : err?.detail?.message)
+              || err?.message || `HTTP ${response.status}`
           );
         }
 
@@ -55,7 +57,7 @@ export function useDashboardData(symbol: string | null) {
           setDashboardData(json.data);
         }
       } catch (err: unknown) {
-        if (err instanceof Error && err.name !== 'AbortError') {
+        if (!controller.signal.aborted && err instanceof Error && err.name !== 'AbortError') {
           setError(err.message || 'Failed to load dashboard');
         }
       } finally {

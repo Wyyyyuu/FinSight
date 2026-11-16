@@ -42,4 +42,19 @@ describe('WelcomePage', () => {
     expect(text).toContain('缺少 VITE_SUPABASE_URL 或 VITE_SUPABASE_PUBLISHABLE_KEY');
     expect(text).toContain('缺少 VITE_RAG_INSPECTOR_DEV_ACCESS_TOKEN');
   });
+
+  it('offers public demo entry points with sample quotes and hides unavailable login', () => {
+    vi.stubEnv('VITE_PUBLIC_DEMO', 'true');
+    try {
+      const text = renderWelcomeText('/welcome?from=/chat');
+
+      expect(text).toContain('进入投研工作台');
+      expect(text).toContain('href="/annual-reports"');
+      expect(text).toContain('示例行情');
+      expect(text).not.toContain('发送验证码');
+      expect(text).not.toContain('实时邮件预警');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });
