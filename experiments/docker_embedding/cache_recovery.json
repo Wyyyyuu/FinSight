@@ -1,0 +1,34 @@
+{
+  "old_identity": {
+    "files": {
+      "2cfc18c9415c912f9d8155881c133215df768a70\\config.json": "289adf7ada1eb6b4afa7589a48a032d45a076cf2e46dcdb3b4cabc33be14f708",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\onnx\\model.onnx": "15b9a8c3da82eddf263df571281166e00e9308fe19d077084b642ebfcaf06d2b",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\special_tokens_map.json": "d5469a60db23249c7f8945013d78df30b44b6bf686c6bb4740f4223f77b1b535",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\tokenizer.json": "9eb652ac4e40cc093272bbbe0f55d521cf67570060227109b5cdc20945a4489e",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\tokenizer_config.json": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
+    },
+    "fastembed": "0.8.0",
+    "code": "ba66492f0d031e20e6529b5e784e109fd9da9a1d5b3d65a744ef97f655596e5d"
+  },
+  "new_identity": {
+    "files": {
+      "2cfc18c9415c912f9d8155881c133215df768a70\\config.json": "289adf7ada1eb6b4afa7589a48a032d45a076cf2e46dcdb3b4cabc33be14f708",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\onnx\\model.onnx": "15b9a8c3da82eddf263df571281166e00e9308fe19d077084b642ebfcaf06d2b",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\special_tokens_map.json": "d5469a60db23249c7f8945013d78df30b44b6bf686c6bb4740f4223f77b1b535",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\tokenizer.json": "9eb652ac4e40cc093272bbbe0f55d521cf67570060227109b5cdc20945a4489e",
+      "2cfc18c9415c912f9d8155881c133215df768a70\\tokenizer_config.json": "a1d6bc8734a6f635dc158508bef000f8e2e5a759c7d92f984b2c86e5ff53425b"
+    },
+    "fastembed": "0.8.0",
+    "tokenizers": "0.23.2",
+    "onnxruntime": "1.30.0",
+    "batch_size": 4,
+    "code": "b64cbad2dae3f0bf1ed24c311803d97bd47c14b50d7808a76fb4698bae1742a2"
+  },
+  "old_profile": "273a9a1704f183df32f5538245ba13ee6d45b3ece468c16c504fac99a4353c09",
+  "new_profile": "fff1d03c85aecb3f061f87221419856526b64d108533c08874dde6d20a2983b0",
+  "matched_old_pairs": 4217,
+  "overlap_pairs": 3860,
+  "max_abs_difference": 0.0,
+  "restored_pairs": 373,
+  "note": "Old source reconstructed and hash matched; CPU weights/tokenization unchanged. Pair scores only; no cached timings used as online latency."
+}

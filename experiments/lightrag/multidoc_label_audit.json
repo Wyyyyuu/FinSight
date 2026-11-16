@@ -1,0 +1,21 @@
+{
+  "status": "audited before any pilot retrieval or answer results",
+  "dataset_sha256": "10e15424547d466ebac82821476d5b69213f55947a09c641411b769699c03c6c",
+  "overrides": [
+    {
+      "task": "dev:multi:3:cross_year",
+      "facet": "1",
+      "original_answer": "58.6%",
+      "answer": "-58.6%",
+      "reason": "The original question asks percentage change from 2013 to 2014. The cited passage gives 58 in 2013 and 24 in 2014. The author program subtract(24,58), divide(#0,58) is negative: (24-58)/58*100 = -58.6206896552%. Preserve the original answer precision."
+    },
+    {
+      "task": "dev:multi:3:cross_year",
+      "facet": "2",
+      "original_required": ["F47c38a0741f7b0bbd5"],
+      "additional_required": ["F13e14f0da0af68cdc5"],
+      "reason": "Computing 24704/25636 requires the numerator fixed maturities as well as the denominator total. Both passages belong to finqa:HIG/2013, HIG/2013/page_124.pdf. The original evidence annotation omitted the numerator."
+    }
+  ],
+  "limits": "These are two directly verifiable corrections, not a complete audit of FinQA or a general narrative factuality assessment. Both raw and audited scores must be retained. No correction is supplied to retrieval, graph extraction or answer generation."
+}

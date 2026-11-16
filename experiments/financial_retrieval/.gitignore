@@ -1,0 +1,6 @@
+raw/
+cache/
+runs/
+__pycache__/
+.pytest_cache/
+dataset.json

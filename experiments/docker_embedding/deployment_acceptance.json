@@ -1,0 +1,80 @@
+{
+  "verified_at": "2026-09-15T05:57:47.264781+00:00",
+  "api_health": {
+    "status": "healthy",
+    "components": {
+      "langgraph_runner": {
+        "status": "ok"
+      },
+      "checkpointer": {
+        "status": "ok",
+        "schema_version": "checkpointer.v1",
+        "backend": "sqlite",
+        "persistent": true,
+        "location": "D:\\codex\\FinSight\\data\\langgraph\\checkpoints.sqlite",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "orchestrator": {
+        "status": "ok"
+      },
+      "cache": {
+        "status": "ok"
+      },
+      "tools_module": {
+        "status": "ok"
+      },
+      "memory": {
+        "status": "ok"
+      },
+      "live_tools": {
+        "status": "active"
+      },
+      "rag_observability": {
+        "status": "disabled",
+        "enabled": false,
+        "recent_runs": [],
+        "fallback_summary": [],
+        "recent_run_count_24h": 0,
+        "recent_fallback_count_24h": 0,
+        "recent_empty_hits_rate_24h": 0.0,
+        "last_run_at": null,
+        "last_fallback_at": null
+      },
+      "rag": {
+        "status": "ok",
+        "backend": "memory",
+        "embedding_model": "bge-m3",
+        "vector_dim": 1024,
+        "doc_count": 0,
+        "recent_runs": [],
+        "fallback_summary": []
+      }
+    },
+    "timestamp": "2026-09-15T05:57:47.270887Z"
+  },
+  "embedding_health": {
+    "ready": true,
+    "model": "bge-m3",
+    "dim": 1024,
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181-maxlen512-cpu",
+    "device": "cpu",
+    "max_length": 512
+  },
+  "active_config": {
+    "final": 8,
+    "lexicalMode": "bm25",
+    "reranker": "bge-reranker-onnx",
+    "backend": "memory",
+    "profile": "5617a9f61b028005a4858fdac845db406aefb181-maxlen512-cpu",
+    "rrfK": 60,
+    "embedding": "bge-m3-http",
+    "started": "2026-09-15T13:55:27.0552507+08:00",
+    "candidates": 24
+  },
+  "web_status": {
+    "http://127.0.0.1:5173/chat": 200,
+    "http://127.0.0.1:5173/annual-reports": 200,
+    "http://127.0.0.1:8002/docs": 200
+  }
+}

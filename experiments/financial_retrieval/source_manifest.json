@@ -1,0 +1,72 @@
+[
+  {
+    "dataset": "finqa",
+    "repository": "https://github.com/czyssrs/FinQA",
+    "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/train.json",
+    "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+    "license": "MIT",
+    "local_file": "raw\\finqa_dataset_train.json",
+    "sha256": "49f237eb9779b569473b26b08048867d04635a7cc39ad6a7a5664c55bb428db6",
+    "bytes": 78216616
+  },
+  {
+    "dataset": "finqa",
+    "repository": "https://github.com/czyssrs/FinQA",
+    "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/dev.json",
+    "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+    "license": "MIT",
+    "local_file": "raw\\finqa_dataset_dev.json",
+    "sha256": "a847fb7e0d61a3125a1e2909852df6b89f1ee64d2c5ff1bf689e332214deee51",
+    "bytes": 10954658
+  },
+  {
+    "dataset": "finqa",
+    "repository": "https://github.com/czyssrs/FinQA",
+    "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/dataset/test.json",
+    "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+    "license": "MIT",
+    "local_file": "raw\\finqa_dataset_test.json",
+    "sha256": "831dbfb2e785dbc227f895ce3f24046433467aec67b09db2bd6ac7692a8a30dc",
+    "bytes": 14395143
+  },
+  {
+    "dataset": "finqa",
+    "repository": "https://github.com/czyssrs/FinQA",
+    "url": "https://raw.githubusercontent.com/czyssrs/FinQA/0f16e2867befa6840783e58be38c9efb9229d742/LICENSE",
+    "revision": "0f16e2867befa6840783e58be38c9efb9229d742",
+    "license": "MIT",
+    "local_file": "raw\\finqa_LICENSE",
+    "sha256": "92c0e67bd762c15c07ba60de09558338315a8ebf99aac4f51f487179809ac087",
+    "bytes": 1067
+  },
+  {
+    "dataset": "multitat",
+    "repository": "https://github.com/zhxlia/MULTITAT",
+    "url": "https://raw.githubusercontent.com/zhxlia/MULTITAT/e35950f2d6301d51ebcdec68bbcdfe99174dbb55/dataset/dev.zh.json",
+    "revision": "e35950f2d6301d51ebcdec68bbcdfe99174dbb55",
+    "license": "No explicit repository license; local evaluation only, do not redistribute translations",
+    "local_file": "raw\\multitat_dataset_dev.zh.json",
+    "sha256": "6f1f2f25018739ce43879397fde20b73d1dd9680ea89a7df8823cf8cce50db58",
+    "bytes": 1255925
+  },
+  {
+    "dataset": "tatqa",
+    "repository": "https://github.com/NExTplusplus/TAT-QA",
+    "url": "https://raw.githubusercontent.com/NExTplusplus/TAT-QA/870accc41953dcde885aabeb963d94aabdc0fbc3/dataset_raw/tatqa_dataset_dev.json",
+    "revision": "870accc41953dcde885aabeb963d94aabdc0fbc3",
+    "license": "Dataset: CC-BY-4.0",
+    "local_file": "raw\\tatqa_dataset_raw_tatqa_dataset_dev.json",
+    "sha256": "8da095a819af6db3c14877c6df2d4d29960e41d1a63dd1fa853507bd2a616af5",
+    "bytes": 1637431
+  },
+  {
+    "dataset": "tatqa",
+    "repository": "https://github.com/NExTplusplus/TAT-QA",
+    "url": "https://raw.githubusercontent.com/NExTplusplus/TAT-QA/870accc41953dcde885aabeb963d94aabdc0fbc3/README.md",
+    "revision": "870accc41953dcde885aabeb963d94aabdc0fbc3",
+    "license": "Dataset: CC-BY-4.0",
+    "local_file": "raw\\tatqa_README.md",
+    "sha256": "85c398173d771a2531abea5b81f3696914296642da2af78c2c34545715c14d5f",
+    "bytes": 4689
+  }
+]

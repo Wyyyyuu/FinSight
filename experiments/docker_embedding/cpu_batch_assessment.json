@@ -1,0 +1,22 @@
+{
+  "rows": [
+    {
+      "language": "en",
+      "documents": 24,
+      "max_abs_score_diff": 0.0,
+      "exact_top8_order": true,
+      "before_ms": 8203.522499999963,
+      "after_ms": 5280.060999999932
+    },
+    {
+      "language": "zh",
+      "documents": 14,
+      "max_abs_score_diff": 0.0,
+      "exact_top8_order": true,
+      "before_ms": 2479.309199999989,
+      "after_ms": 1870.6391000000622
+    }
+  ],
+  "batch_size": 4,
+  "note": "Same CPU FP32 weights and tokenization, length grouping only; two-query parity sample, not load testing."
+}

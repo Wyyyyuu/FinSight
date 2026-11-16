@@ -1,0 +1,46 @@
+{
+  "status": "complete",
+  "model": "deepseek-flash",
+  "dataset_sha256": "d62bf5b4f5e75b2c396b90a62d48bbea2429b4f198e2bda117209ca5fc716238",
+  "selection_config": {
+    "by_language": {
+      "en": {
+        "field": "structured",
+        "lexical": "bm25",
+        "rrf_k": 20,
+        "sparse_weight": 1.0
+      },
+      "zh": {
+        "field": "plain",
+        "lexical": "cjk",
+        "rrf_k": 60,
+        "sparse_weight": 1.0
+      }
+    }
+  },
+  "context_mode": "structured",
+  "retry_of": null,
+  "sample_rule": "fixed SHA256 ordering, 12 English + 8 Chinese numeric test questions, paired",
+  "numeric_tolerance": "max(0.01, abs(reference)*0.001)",
+  "summary": {
+    "baseline": {
+      "questions": 20,
+      "numeric_correct": 6,
+      "citation_ids_valid": 13,
+      "errors": 0
+    },
+    "selected": {
+      "questions": 20,
+      "numeric_correct": 8,
+      "citation_ids_valid": 14,
+      "errors": 0
+    }
+  },
+  "prompt_tokens": 14424,
+  "completion_tokens": 2322,
+  "limitations": [
+    "20-question numeric subset; no production capacity or broad answer-quality claim",
+    "Citation identity is not citation entailment; no model self-grading",
+    "Reference answers and evidence are never provided beyond retrieved context"
+  ]
+}

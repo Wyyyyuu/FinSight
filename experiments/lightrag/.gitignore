@@ -1,0 +1,8 @@
+.venv/
+.env.local
+.env.neo4j.local
+__pycache__/
+.pytest_cache/
+runs/
+models/
+*.log

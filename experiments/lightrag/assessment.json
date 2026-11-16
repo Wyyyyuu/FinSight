@@ -1,0 +1,198 @@
+{
+  "verdict": "keep_existing_rag_no_production_rollout",
+  "run_id": "20260914T143941Z-125dba5f",
+  "execution_status": "complete",
+  "synthetic_documents": 16,
+  "cases": 12,
+  "answerable_cases": 10,
+  "source_retrieval_summary": {
+    "legacy_hash": {
+      "recall_at_k": {
+        "mean": 0.2583333333333333,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.23429667986032457,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.1,
+        "measured": 10,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 1.9028000242542475,
+        "p95": 4.157429994666018,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 1.5781499969307333,
+        "p95": 3.3154999953694637,
+        "measured": 24
+      }
+    },
+    "legacy_semantic": {
+      "recall_at_k": {
+        "mean": 0.825,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.8679659019505719,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.6,
+        "measured": 10,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 7.214549987111241,
+        "p95": 10.776625026483087,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 6.350150011712685,
+        "p95": 8.781499991891904,
+        "measured": 24
+      }
+    },
+    "lightrag_mix": {
+      "recall_at_k": {
+        "mean": 0.8333333333333334,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.8649159330879042,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.6,
+        "measured": 10,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 968.1574499991257,
+        "p95": 1101.2745249958243,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 30.681599979288876,
+        "p95": 35.14097997394856,
+        "measured": 24
+      }
+    },
+    "lightrag_naive": {
+      "recall_at_k": {
+        "mean": 0.825,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.8679659019505719,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.6,
+        "measured": 10,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 10.671449999790639,
+        "p95": 18.414335008128543,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 8.514249988365918,
+        "p95": 12.152529988088643,
+        "measured": 24
+      }
+    }
+  },
+  "indexing": {
+    "legacy_hash": {
+      "elapsed_ms": 2.0994999795220792,
+      "counts": {
+        "indexed": 16,
+        "skipped": 0
+      },
+      "llm_calls": 0
+    },
+    "legacy_semantic": {
+      "elapsed_ms": 163.88139995979145,
+      "counts": {
+        "indexed": 16,
+        "skipped": 0
+      },
+      "llm_calls": 0
+    },
+    "lightrag_shared": {
+      "elapsed_ms": 21912.86099998979,
+      "counts": {
+        "pending": 0,
+        "parsing": 0,
+        "analyzing": 0,
+        "processing": 0,
+        "preprocessed": 0,
+        "processed": 16,
+        "failed": 0
+      },
+      "llm_calls": 17,
+      "note": "naive与mix共享同一完整图索引；该成本不能计为naive专用索引成本"
+    }
+  },
+  "completed_run_token_usage": {
+    "answer": {
+      "calls": 48,
+      "failed_calls": 0,
+      "known_prompt_tokens": 38514,
+      "known_completion_tokens": 5020,
+      "missing_usage_calls": 0
+    },
+    "index": {
+      "calls": 17,
+      "failed_calls": 0,
+      "known_prompt_tokens": 30308,
+      "known_completion_tokens": 7152,
+      "missing_usage_calls": 0
+    },
+    "judge": {
+      "calls": 48,
+      "failed_calls": 0,
+      "known_prompt_tokens": 24985,
+      "known_completion_tokens": 5310,
+      "missing_usage_calls": 0
+    },
+    "retrieval": {
+      "calls": 12,
+      "failed_calls": 0,
+      "known_prompt_tokens": 8171,
+      "known_completion_tokens": 458,
+      "missing_usage_calls": 0
+    }
+  },
+  "quality_judge_status": "unreliable_same_model_scores_diagnostic_only",
+  "raw_mix_answers_with_out_of_context_source_ids": 2,
+  "grounding_replay_status": "complete",
+  "grounding_replay_answers": 12,
+  "grounding_replay_out_of_context_id_answers": 0,
+  "grounding_replay_request_attempts": 15,
+  "grounding_replay_connect_failures": 3,
+  "offline_experiment_tests_passed": 10,
+  "existing_rag_regressions_passed": 35,
+  "production_modified": false,
+  "limits": [
+    "small synthetic corpus",
+    "in-memory legacy backend",
+    "bge-small not deployed bge-m3",
+    "same-model judge errors",
+    "full run predates provenance guard; guarded answer replay only",
+    "aborted-run token usage incomplete; no total account cost computed"
+  ]
+}

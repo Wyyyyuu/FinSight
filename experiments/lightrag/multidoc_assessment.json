@@ -1,0 +1,2987 @@
+{
+  "report": "D:\\codex\\FinSight\\experiments\\lightrag\\runs\\20260915T061925Z-multidoc\\report.json",
+  "report_sha256": "3773df573e5a6013a1669c3dc492f5852d75834d529a9bac0b3fb4554c31f93f",
+  "audit_sha256": "5d0fce1bf4d42a340d46214a43ede3d2bda114d05bde024dae1f704d043c8ecc",
+  "assessments": {
+    "original": {
+      "scores": {
+        "m3_global8": {
+          "recall": 0.5119047619047619,
+          "complete": 0.0,
+          "precision": 0.25,
+          "ndcg": 0.5833618174206361,
+          "numeric_correct": 0,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 0
+        },
+        "m3_balanced8": {
+          "recall": 0.6428571428571428,
+          "complete": 0.3333333333333333,
+          "precision": 0.2916666666666667,
+          "ndcg": 0.5991557195536348,
+          "numeric_correct": 3,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 2
+        },
+        "lightrag_naive8": {
+          "recall": 0.21428571428571427,
+          "complete": 0.0,
+          "precision": 0.08333333333333333,
+          "ndcg": 0.16442792324415167,
+          "numeric_correct": 1,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 0
+        },
+        "lightrag_mix8": {
+          "recall": 0.047619047619047616,
+          "complete": 0.0,
+          "precision": 0.041666666666666664,
+          "ndcg": 0.09162544430476362,
+          "numeric_correct": 1,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 0
+        },
+        "graph_balanced8": {
+          "recall": 0.09523809523809523,
+          "complete": 0.0,
+          "precision": 0.08333333333333333,
+          "ndcg": 0.14943466330084346,
+          "numeric_correct": 2,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 0
+        }
+      },
+      "rows": [
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "m3_global8",
+          "metrics": {
+            "recall_at_k": 0.75,
+            "precision_at_k": 0.375,
+            "ndcg_at_k": 0.6886342695939197,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": 0.263,
+                "unit": "billions",
+                "citations": [
+                  "F86c57bae4fb2848340"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  }
+                ],
+                "calculation": "1086 - 823 = 263 million; 263 / 1000 = 0.263 billion"
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 1250,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "F12106d63b7eefe5317",
+                  "Fda4b2086a60f5c013c",
+                  "Fa874f99a2f015c6279"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "F12106d63b7eefe5317",
+                    "text": "u.s . dollar notes; column 1: ( d ); face value ( e ): $ 500; interest rate: 1.250% ( 1.250 % ); issuance: november 2014; maturity: november 2017"
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  },
+                  {
+                    "source_id": "Fa874f99a2f015c6279",
+                    "text": "u.s . dollar notes; column 1: ( d ); face value ( e ): $ 750; interest rate: 4.250% ( 4.250 % ); issuance: november 2014; maturity: november 2044"
+                  }
+                ],
+                "calculation": "500 + 750 = 1250"
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "m3_balanced8",
+          "metrics": {
+            "recall_at_k": 0.5,
+            "precision_at_k": 0.25,
+            "ndcg_at_k": 0.31834121936641585,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": 263,
+                "unit": "billions",
+                "citations": [
+                  "F86c57bae4fb2848340"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  }
+                ],
+                "calculation": "1086 - 823 = 263"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": true,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 1250,
+                "unit": "millions",
+                "citations": [
+                  "F12106d63b7eefe5317",
+                  "F4acb6419ad50a278c1"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F12106d63b7eefe5317",
+                    "text": "u.s . dollar notes; column 1: ( d ); face value ( e ): $ 500; interest rate: 1.250% ( 1.250 % ); issuance: november 2014; maturity: november 2017"
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  }
+                ],
+                "calculation": "500 + 750 = 1250"
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "lightrag_naive8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "billions",
+                "citations": [],
+                "quotes": [],
+                "calculation": "No evidence from finqa:HIG/2011 was supplied, so the change in value of fixed maturities AFS from 2010 to 2011 cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 2000,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "Fda4b2086a60f5c013c",
+                  "F4acb6419ad50a278c1"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  }
+                ],
+                "calculation": "500 + 750 + 750 = 2000"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "lightrag_mix8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "billions",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Insufficient evidence: no supplied source from finqa:HIG/2011 provides fixed maturities AFS values for 2010 or 2011."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 2000,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "Fda4b2086a60f5c013c",
+                  "F4acb6419ad50a278c1"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  }
+                ],
+                "calculation": "500 + 750 + 750 = 2000"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "graph_balanced8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "billions",
+                "citations": [
+                  "F9dce1c1b868299437f",
+                  "F258a7071c0d1118930",
+                  "F617ced2f86ea33e021",
+                  "F5793bf1edcf1ae4f34"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F9dce1c1b868299437f",
+                    "text": "adjustments to unrealized gains and losses on securities available-for-sale and other [2]; 2011: -377 ( 377 ); 2010: -1159 ( 1159 ); 2009: -1031 ( 1031 )"
+                  },
+                  {
+                    "source_id": "F258a7071c0d1118930",
+                    "text": "| 2011 | 2010 | 2009"
+                  },
+                  {
+                    "source_id": "F617ced2f86ea33e021",
+                    "text": "balance january 1; 2011: $ 9857; 2010: $ 10686; 2009: $ 13248"
+                  },
+                  {
+                    "source_id": "F5793bf1edcf1ae4f34",
+                    "text": "deferred costs; 2011: 2608; 2010: 2648; 2009: 2853"
+                  }
+                ],
+                "calculation": "No calculation possible because the evidence does not provide the value of fixed maturities AFS for 2010 or 2011."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 2000,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "F4acb6419ad50a278c1",
+                  "Fda4b2086a60f5c013c"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  }
+                ],
+                "calculation": "500 + 750 + 750 = 2000"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "m3_global8",
+          "metrics": {
+            "recall_at_k": 0.5,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.6131471927654584,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": -58.62,
+                "unit": "%",
+                "citations": [
+                  "Ff13404836dfb07efdc"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff13404836dfb07efdc",
+                    "text": "as of december 31 , 2011 , estimated future net amortization expense of present value of future profits for the succeeding five years is $ 39 , $ 58 , $ 24 , $ 23 and $ 22 in 2012 , 2013 , 2014 , 2015 and 2016 , respectively. ."
+                  }
+                ],
+                "calculation": "((24 - 58) / 58) * 100 = -58.62%"
+              },
+              "numeric_correct": false,
+              "unit_correct": true,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "%",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot be calculated because no evidence for finqa:HIG/2013 was supplied."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "m3_balanced8",
+          "metrics": {
+            "recall_at_k": 1.0,
+            "precision_at_k": 0.25,
+            "ndcg_at_k": 1.0,
+            "all_evidence": 1.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": -58.62,
+                "unit": "%",
+                "citations": [
+                  "Ff13404836dfb07efdc"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff13404836dfb07efdc",
+                    "text": "as of december 31 , 2011 , estimated future net amortization expense of present value of future profits for the succeeding five years is $ 39 , $ 58 , $ 24 , $ 23 and $ 22 in 2012 , 2013 , 2014 , 2015 and 2016 , respectively. ."
+                  }
+                ],
+                "calculation": "((24 - 58) / 58) * 100 = -58.62%"
+              },
+              "numeric_correct": false,
+              "unit_correct": true,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": 96.36,
+                "unit": "%",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F13e14f0da0af68cdc5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F13e14f0da0af68cdc5",
+                    "text": "fixed maturities; column 1: $ 24704"
+                  }
+                ],
+                "calculation": "(24704 / 25636) * 100 = 96.36%"
+              },
+              "numeric_correct": true,
+              "unit_correct": true,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": true,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "lightrag_naive8",
+          "metrics": {
+            "recall_at_k": 0.5,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.21840743681816419,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fab5cd5343ae20fb5b4",
+                  "F07e2b62f685c34cb37",
+                  "F5c29046e0591c215fb",
+                  "F5793bf1edcf1ae4f34",
+                  "F617ced2f86ea33e021"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fab5cd5343ae20fb5b4",
+                    "text": "amortization 2014 dac from discontinued operations; 2011: 2014; 2010: -17 ( 17 ); 2009: -10 ( 10 )"
+                  },
+                  {
+                    "source_id": "F07e2b62f685c34cb37",
+                    "text": "amortization 2014 dac; 2011: -2920 ( 2920 ); 2010: -2665 ( 2665 ); 2009: -3247 ( 3247 )"
+                  },
+                  {
+                    "source_id": "F5c29046e0591c215fb",
+                    "text": "amortization 2014 unlock benefit ( charge ) pre-tax [1]; 2011: -507 ( 507 ); 2010: 138; 2009: -1010 ( 1010 )"
+                  },
+                  {
+                    "source_id": "F5793bf1edcf1ae4f34",
+                    "text": "deferred costs; 2011: 2608; 2010: 2648; 2009: 2853"
+                  },
+                  {
+                    "source_id": "F617ced2f86ea33e021",
+                    "text": "balance january 1; 2011: $ 9857; 2010: $ 10686; 2009: $ 13248"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage change because the 2013 and 2014 estimated future net amortization expense of present value of future profits amounts are not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F8f173363d296f9c4f8",
+                  "Ff14f77baa6a26a1206"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F8f173363d296f9c4f8",
+                    "text": "short-term investments; column 1: 984"
+                  },
+                  {
+                    "source_id": "Ff14f77baa6a26a1206",
+                    "text": "cash; column 1: 189"
+                  }
+                ],
+                "calculation": "Cannot calculate percent held in fixed maturities because the fixed maturities amount is not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "lightrag_mix8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fab5cd5343ae20fb5b4",
+                  "F07e2b62f685c34cb37",
+                  "F5c29046e0591c215fb",
+                  "F5793bf1edcf1ae4f34",
+                  "F617ced2f86ea33e021"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fab5cd5343ae20fb5b4",
+                    "text": "amortization 2014 dac from discontinued operations; 2011: 2014; 2010: -17 ( 17 ); 2009: -10 ( 10 )"
+                  },
+                  {
+                    "source_id": "F07e2b62f685c34cb37",
+                    "text": "amortization 2014 dac; 2011: -2920 ( 2920 ); 2010: -2665 ( 2665 ); 2009: -3247 ( 3247 )"
+                  },
+                  {
+                    "source_id": "F5c29046e0591c215fb",
+                    "text": "amortization 2014 unlock benefit ( charge ) pre-tax [1]; 2011: -507 ( 507 ); 2010: 138; 2009: -1010 ( 1010 )"
+                  },
+                  {
+                    "source_id": "F5793bf1edcf1ae4f34",
+                    "text": "deferred costs; 2011: 2608; 2010: 2648; 2009: 2853"
+                  },
+                  {
+                    "source_id": "F617ced2f86ea33e021",
+                    "text": "balance january 1; 2011: $ 9857; 2010: $ 10686; 2009: $ 13248"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage change from 2013 to 2014 because the supplied finqa:HIG/2011 evidence does not provide the estimated future net amortization expense of present value of future profits for 2013 or 2014."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot calculate percent of total amount held in fixed maturities because no finqa:HIG/2013 evidence was supplied."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "graph_balanced8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F07e2b62f685c34cb37"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F07e2b62f685c34cb37",
+                    "text": "amortization 2014 dac; 2011: -2920 ( 2920 ); 2010: -2665 ( 2665 ); 2009: -3247 ( 3247 )"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage change from 2013 to 2014 because the 2013 amount is not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F13e14f0da0af68cdc5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F13e14f0da0af68cdc5",
+                    "text": "fixed maturities; column 1: $ 24704"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage of total because the total amount is not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "m3_global8",
+          "metrics": {
+            "recall_at_k": 0.2857142857142857,
+            "precision_at_k": 0.25,
+            "ndcg_at_k": 0.44830398990253034,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fa6d22dc0f11247e0d5",
+                  "Ff6b56142a56c252b8d",
+                  "F86c57bae4fb2848340",
+                  "F8a9ecddf3246aee3a6"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fa6d22dc0f11247e0d5",
+                    "text": "short-term investments; december 31 2011: 199; december 31 2010: 2014"
+                  },
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F8a9ecddf3246aee3a6",
+                    "text": "as of december 31 , 2011 and 2010 , the company had accepted collateral with a fair value of $ 2.6 billion and $ 1.5 billion , respectively , of which $ 2.0 billion and $ 1.1 billion , respectively , was cash collateral which was invested and recorded in the consolidated balance sheets in fixed maturities and short-term investments with corresponding amounts recorded in other assets and other liabilities ."
+                  }
+                ],
+                "calculation": "Cannot calculate: the supplied evidence does not establish that the short-term investments amount of 199 is part of the total collateral pledged of $1285 for December 31, 2011."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F95a250217784e546c7"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F95a250217784e546c7",
+                    "text": "less : derivative collateral; column 1: 241"
+                  }
+                ],
+                "calculation": "Cannot calculate: no total amount is provided in the supplied evidence for HIG/2013."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": null,
+                "unit": "millions of dollars",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot calculate: no evidence from finqa:PM/2014 is supplied."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "m3_balanced8",
+          "metrics": {
+            "recall_at_k": 0.42857142857142855,
+            "precision_at_k": 0.375,
+            "ndcg_at_k": 0.47912593929448855,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fa6d22dc0f11247e0d5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fa6d22dc0f11247e0d5",
+                    "text": "short-term investments; december 31 2011: 199; december 31 2010: 2014"
+                  }
+                ],
+                "calculation": "Cannot calculate: evidence provides short-term investments of 199 for December 31, 2011, but does not provide the total collateral loaned securities and derivative instruments collateral pledged."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F13e14f0da0af68cdc5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F13e14f0da0af68cdc5",
+                    "text": "fixed maturities; column 1: $ 24704"
+                  }
+                ],
+                "calculation": "Cannot calculate: evidence provides a total of $25,636 and fixed maturities of $24,704, but does not provide a cash amount."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": 3098,
+                "unit": "millions of dollars",
+                "citations": [
+                  "F9f0490280296833069",
+                  "F10b2cfa74b461b9a62"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F9f0490280296833069",
+                    "text": "our debt issuances in 2014 were as follows : ( in millions ) type face value ( e ) interest rate issuance maturity euro notes ( a ) 20ac750 ( approximately $ 1029 ) 1.875% ( 1.875 % ) march 2014 march 2021 euro notes ( a ) 20ac1000 ( approximately $ 1372 ) 2.875% ( 2.875 % ) march 2014 march 2026 euro notes ( b ) 20ac500 ( approximately $ 697 ) 2.875% ( 2.875 % ) may 2014 may 2029 swiss franc notes ( c ) chf275 ( approximately $ 311 ) 0.750% ( 0.750 % ) may 2014 december 2019 swiss franc notes ( b ) chf250 ( approximately $ 283 ) 1.625% ( 1.625 % ) may 2014 may 2024 u.s ."
+                  },
+                  {
+                    "source_id": "F10b2cfa74b461b9a62",
+                    "text": "euro notes; column 1: ( a ); face value ( e ): 20ac1000 ( approximately $ 1372 ); interest rate: 2.875% ( 2.875 % ); issuance: march 2014; maturity: march 2026"
+                  }
+                ],
+                "calculation": "1029 + 1372 + 697 = 3098"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "lightrag_naive8",
+          "metrics": {
+            "recall_at_k": 0.14285714285714285,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.27487633291429087,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Ff6b56142a56c252b8d",
+                  "F0cafaba890d9b12fb0",
+                  "F8a9ecddf3246aee3a6",
+                  "F69dd3da9a5c33c0556"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F0cafaba890d9b12fb0",
+                    "text": "the following table presents the classification and carrying amount of loaned securities and derivative instruments collateral pledged. ."
+                  },
+                  {
+                    "source_id": "F8a9ecddf3246aee3a6",
+                    "text": "as of december 31 , 2011 and 2010 , the company had accepted collateral with a fair value of $ 2.6 billion and $ 1.5 billion , respectively , of which $ 2.0 billion and $ 1.1 billion , respectively , was cash collateral which was invested and recorded in the consolidated balance sheets in fixed maturities and short-term investments with corresponding amounts recorded in other assets and other liabilities ."
+                  },
+                  {
+                    "source_id": "F69dd3da9a5c33c0556",
+                    "text": "as of december 31 , 2011 and 2010 , collateral pledged having a fair value of $ 1.1 billion and $ 790 , respectively , was included in fixed maturities , afs , in the consolidated balance sheets ."
+                  }
+                ],
+                "calculation": "Cannot compute: evidence does not provide the portion of total collateral loaned securities and derivative instruments collateral pledged that was associated with short-term investments."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot compute: no evidence was supplied for finqa:HIG/2013."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": null,
+                "unit": "millions of dollars",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot compute: no evidence was supplied for finqa:PM/2014."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "lightrag_mix8",
+          "metrics": {
+            "recall_at_k": 0.14285714285714285,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.27487633291429087,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Ff6b56142a56c252b8d",
+                  "F8a9ecddf3246aee3a6",
+                  "F69dd3da9a5c33c0556"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F8a9ecddf3246aee3a6",
+                    "text": "as of december 31 , 2011 and 2010 , the company had accepted collateral with a fair value of $ 2.6 billion and $ 1.5 billion , respectively , of which $ 2.0 billion and $ 1.1 billion , respectively , was cash collateral which was invested and recorded in the consolidated balance sheets in fixed maturities and short-term investments with corresponding amounts recorded in other assets and other liabilities ."
+                  },
+                  {
+                    "source_id": "F69dd3da9a5c33c0556",
+                    "text": "as of december 31 , 2011 and 2010 , collateral pledged having a fair value of $ 1.1 billion and $ 790 , respectively , was included in fixed maturities , afs , in the consolidated balance sheets ."
+                  }
+                ],
+                "calculation": "Cannot be calculated because the evidence does not provide the portion of total collateral pledged that was associated with short-term investments."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [],
+                "quotes": [],
+                "calculation": "No evidence was supplied for finqa:HIG/2013, so the percentage of total amount held as cash cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": null,
+                "unit": "millions of dollars",
+                "citations": [],
+                "quotes": [],
+                "calculation": "No evidence was supplied for finqa:PM/2014, so the total euro notes issued in 2014 in millions of dollars cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "graph_balanced8",
+          "metrics": {
+            "recall_at_k": 0.2857142857142857,
+            "precision_at_k": 0.25,
+            "ndcg_at_k": 0.44830398990253034,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Ff6b56142a56c252b8d",
+                  "F86c57bae4fb2848340"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  }
+                ],
+                "calculation": "Cannot compute: the evidence does not provide the short-term investments amount for 2011, so the numerator for the requested percentage is unavailable."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F8f173363d296f9c4f8"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F8f173363d296f9c4f8",
+                    "text": "short-term investments; column 1: 984"
+                  }
+                ],
+                "calculation": "Cannot compute: the evidence provides total and short-term investments, but no cash amount, so the requested cash percentage cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": 3098,
+                "unit": "millions of dollars",
+                "citations": [
+                  "F9f0490280296833069"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F9f0490280296833069",
+                    "text": "our debt issuances in 2014 were as follows : ( in millions ) type face value ( e ) interest rate issuance maturity euro notes ( a ) 20ac750 ( approximately $ 1029 ) 1.875% ( 1.875 % ) march 2014 march 2021 euro notes ( a ) 20ac1000 ( approximately $ 1372 ) 2.875% ( 2.875 % ) march 2014 march 2026 euro notes ( b ) 20ac500 ( approximately $ 697 ) 2.875% ( 2.875 % ) may 2014 may 2029 swiss franc notes ( c ) chf275 ( approximately $ 311 ) 0.750% ( 0.750 % ) may 2014 december 2019 swiss franc notes ( b ) chf250 ( approximately $ 283 ) 1.625% ( 1.625 % ) may 2014 may 2024 u.s ."
+                  }
+                ],
+                "calculation": "1029 + 1372 + 697 = 3098"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        }
+      ]
+    },
+    "audited": {
+      "scores": {
+        "m3_global8": {
+          "recall": 0.45634920634920634,
+          "complete": 0.0,
+          "precision": 0.25,
+          "ndcg": 0.5354056618397355,
+          "numeric_correct": 1,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 1
+        },
+        "m3_balanced8": {
+          "recall": 0.6428571428571428,
+          "complete": 0.3333333333333333,
+          "precision": 0.3333333333333333,
+          "ndcg": 0.5883117140500246,
+          "numeric_correct": 4,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 3
+        },
+        "lightrag_naive8": {
+          "recall": 0.15873015873015872,
+          "complete": 0.0,
+          "precision": 0.08333333333333333,
+          "ndcg": 0.1473455959601644,
+          "numeric_correct": 1,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 0
+        },
+        "lightrag_mix8": {
+          "recall": 0.047619047619047616,
+          "complete": 0.0,
+          "precision": 0.041666666666666664,
+          "ndcg": 0.09162544430476362,
+          "numeric_correct": 1,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 0
+        },
+        "graph_balanced8": {
+          "recall": 0.20634920634920634,
+          "complete": 0.0,
+          "precision": 0.125,
+          "ndcg": 0.24812863362279852,
+          "numeric_correct": 2,
+          "numeric_scored": 7,
+          "numeric_and_evidence": 0
+        }
+      },
+      "rows": [
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "m3_global8",
+          "metrics": {
+            "recall_at_k": 0.75,
+            "precision_at_k": 0.375,
+            "ndcg_at_k": 0.6886342695939197,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": 0.263,
+                "unit": "billions",
+                "citations": [
+                  "F86c57bae4fb2848340"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  }
+                ],
+                "calculation": "1086 - 823 = 263 million; 263 / 1000 = 0.263 billion"
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 1250,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "F12106d63b7eefe5317",
+                  "Fda4b2086a60f5c013c",
+                  "Fa874f99a2f015c6279"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "F12106d63b7eefe5317",
+                    "text": "u.s . dollar notes; column 1: ( d ); face value ( e ): $ 500; interest rate: 1.250% ( 1.250 % ); issuance: november 2014; maturity: november 2017"
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  },
+                  {
+                    "source_id": "Fa874f99a2f015c6279",
+                    "text": "u.s . dollar notes; column 1: ( d ); face value ( e ): $ 750; interest rate: 4.250% ( 4.250 % ); issuance: november 2014; maturity: november 2044"
+                  }
+                ],
+                "calculation": "500 + 750 = 1250"
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "m3_balanced8",
+          "metrics": {
+            "recall_at_k": 0.5,
+            "precision_at_k": 0.25,
+            "ndcg_at_k": 0.31834121936641585,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": 263,
+                "unit": "billions",
+                "citations": [
+                  "F86c57bae4fb2848340"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  }
+                ],
+                "calculation": "1086 - 823 = 263"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": true,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 1250,
+                "unit": "millions",
+                "citations": [
+                  "F12106d63b7eefe5317",
+                  "F4acb6419ad50a278c1"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F12106d63b7eefe5317",
+                    "text": "u.s . dollar notes; column 1: ( d ); face value ( e ): $ 500; interest rate: 1.250% ( 1.250 % ); issuance: november 2014; maturity: november 2017"
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  }
+                ],
+                "calculation": "500 + 750 = 1250"
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "lightrag_naive8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "billions",
+                "citations": [],
+                "quotes": [],
+                "calculation": "No evidence from finqa:HIG/2011 was supplied, so the change in value of fixed maturities AFS from 2010 to 2011 cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 2000,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "Fda4b2086a60f5c013c",
+                  "F4acb6419ad50a278c1"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  }
+                ],
+                "calculation": "500 + 750 + 750 = 2000"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "lightrag_mix8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "billions",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Insufficient evidence: no supplied source from finqa:HIG/2011 provides fixed maturities AFS values for 2010 or 2011."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 2000,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "Fda4b2086a60f5c013c",
+                  "F4acb6419ad50a278c1"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  }
+                ],
+                "calculation": "500 + 750 + 750 = 2000"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_company",
+          "arm": "graph_balanced8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "263",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "billions",
+                "citations": [
+                  "F9dce1c1b868299437f",
+                  "F258a7071c0d1118930",
+                  "F617ced2f86ea33e021",
+                  "F5793bf1edcf1ae4f34"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F9dce1c1b868299437f",
+                    "text": "adjustments to unrealized gains and losses on securities available-for-sale and other [2]; 2011: -377 ( 377 ); 2010: -1159 ( 1159 ); 2009: -1031 ( 1031 )"
+                  },
+                  {
+                    "source_id": "F258a7071c0d1118930",
+                    "text": "| 2011 | 2010 | 2009"
+                  },
+                  {
+                    "source_id": "F617ced2f86ea33e021",
+                    "text": "balance january 1; 2011: $ 9857; 2010: $ 10686; 2009: $ 13248"
+                  },
+                  {
+                    "source_id": "F5793bf1edcf1ae4f34",
+                    "text": "deferred costs; 2011: 2608; 2010: 2648; 2009: 2853"
+                  }
+                ],
+                "calculation": "No calculation possible because the evidence does not provide the value of fixed maturities AFS for 2010 or 2011."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "2000",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:PM/2014",
+                "answer": 2000,
+                "unit": "millions",
+                "citations": [
+                  "F32f9f1a8c812e0340a",
+                  "F4acb6419ad50a278c1",
+                  "Fda4b2086a60f5c013c"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F32f9f1a8c812e0340a",
+                    "text": "dollar notes ( d ) $ 500 1.250% ( 1.250 % ) november 2014 november 2017 u.s ."
+                  },
+                  {
+                    "source_id": "F4acb6419ad50a278c1",
+                    "text": "dollar notes ( d ) $ 750 3.250% ( 3.250 % ) november 2014 november 2024 u.s ."
+                  },
+                  {
+                    "source_id": "Fda4b2086a60f5c013c",
+                    "text": "dollar notes ( d ) $ 750 4.250% ( 4.250 % ) november 2014 november 2044 ( a ) interest on these notes is payable annually in arrears beginning in march 2015 ."
+                  }
+                ],
+                "calculation": "500 + 750 + 750 = 2000"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "m3_global8",
+          "metrics": {
+            "recall_at_k": 0.3333333333333333,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.46927872602275644,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "-58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": -58.62,
+                "unit": "%",
+                "citations": [
+                  "Ff13404836dfb07efdc"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff13404836dfb07efdc",
+                    "text": "as of december 31 , 2011 , estimated future net amortization expense of present value of future profits for the succeeding five years is $ 39 , $ 58 , $ 24 , $ 23 and $ 22 in 2012 , 2013 , 2014 , 2015 and 2016 , respectively. ."
+                  }
+                ],
+                "calculation": "((24 - 58) / 58) * 100 = -58.62%"
+              },
+              "numeric_correct": true,
+              "unit_correct": true,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": true,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "%",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot be calculated because no evidence for finqa:HIG/2013 was supplied."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "m3_balanced8",
+          "metrics": {
+            "recall_at_k": 1.0,
+            "precision_at_k": 0.375,
+            "ndcg_at_k": 0.9674679834891693,
+            "all_evidence": 1.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "-58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": -58.62,
+                "unit": "%",
+                "citations": [
+                  "Ff13404836dfb07efdc"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff13404836dfb07efdc",
+                    "text": "as of december 31 , 2011 , estimated future net amortization expense of present value of future profits for the succeeding five years is $ 39 , $ 58 , $ 24 , $ 23 and $ 22 in 2012 , 2013 , 2014 , 2015 and 2016 , respectively. ."
+                  }
+                ],
+                "calculation": "((24 - 58) / 58) * 100 = -58.62%"
+              },
+              "numeric_correct": true,
+              "unit_correct": true,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": true,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": 96.36,
+                "unit": "%",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F13e14f0da0af68cdc5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F13e14f0da0af68cdc5",
+                    "text": "fixed maturities; column 1: $ 24704"
+                  }
+                ],
+                "calculation": "(24704 / 25636) * 100 = 96.36%"
+              },
+              "numeric_correct": true,
+              "unit_correct": true,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": true,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "lightrag_naive8",
+          "metrics": {
+            "recall_at_k": 0.3333333333333333,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.16716045496620227,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "-58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fab5cd5343ae20fb5b4",
+                  "F07e2b62f685c34cb37",
+                  "F5c29046e0591c215fb",
+                  "F5793bf1edcf1ae4f34",
+                  "F617ced2f86ea33e021"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fab5cd5343ae20fb5b4",
+                    "text": "amortization 2014 dac from discontinued operations; 2011: 2014; 2010: -17 ( 17 ); 2009: -10 ( 10 )"
+                  },
+                  {
+                    "source_id": "F07e2b62f685c34cb37",
+                    "text": "amortization 2014 dac; 2011: -2920 ( 2920 ); 2010: -2665 ( 2665 ); 2009: -3247 ( 3247 )"
+                  },
+                  {
+                    "source_id": "F5c29046e0591c215fb",
+                    "text": "amortization 2014 unlock benefit ( charge ) pre-tax [1]; 2011: -507 ( 507 ); 2010: 138; 2009: -1010 ( 1010 )"
+                  },
+                  {
+                    "source_id": "F5793bf1edcf1ae4f34",
+                    "text": "deferred costs; 2011: 2608; 2010: 2648; 2009: 2853"
+                  },
+                  {
+                    "source_id": "F617ced2f86ea33e021",
+                    "text": "balance january 1; 2011: $ 9857; 2010: $ 10686; 2009: $ 13248"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage change because the 2013 and 2014 estimated future net amortization expense of present value of future profits amounts are not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F8f173363d296f9c4f8",
+                  "Ff14f77baa6a26a1206"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F8f173363d296f9c4f8",
+                    "text": "short-term investments; column 1: 984"
+                  },
+                  {
+                    "source_id": "Ff14f77baa6a26a1206",
+                    "text": "cash; column 1: 189"
+                  }
+                ],
+                "calculation": "Cannot calculate percent held in fixed maturities because the fixed maturities amount is not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "lightrag_mix8",
+          "metrics": {
+            "recall_at_k": 0.0,
+            "precision_at_k": 0.0,
+            "ndcg_at_k": 0.0,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "-58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fab5cd5343ae20fb5b4",
+                  "F07e2b62f685c34cb37",
+                  "F5c29046e0591c215fb",
+                  "F5793bf1edcf1ae4f34",
+                  "F617ced2f86ea33e021"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fab5cd5343ae20fb5b4",
+                    "text": "amortization 2014 dac from discontinued operations; 2011: 2014; 2010: -17 ( 17 ); 2009: -10 ( 10 )"
+                  },
+                  {
+                    "source_id": "F07e2b62f685c34cb37",
+                    "text": "amortization 2014 dac; 2011: -2920 ( 2920 ); 2010: -2665 ( 2665 ); 2009: -3247 ( 3247 )"
+                  },
+                  {
+                    "source_id": "F5c29046e0591c215fb",
+                    "text": "amortization 2014 unlock benefit ( charge ) pre-tax [1]; 2011: -507 ( 507 ); 2010: 138; 2009: -1010 ( 1010 )"
+                  },
+                  {
+                    "source_id": "F5793bf1edcf1ae4f34",
+                    "text": "deferred costs; 2011: 2608; 2010: 2648; 2009: 2853"
+                  },
+                  {
+                    "source_id": "F617ced2f86ea33e021",
+                    "text": "balance january 1; 2011: $ 9857; 2010: $ 10686; 2009: $ 13248"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage change from 2013 to 2014 because the supplied finqa:HIG/2011 evidence does not provide the estimated future net amortization expense of present value of future profits for 2013 or 2014."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot calculate percent of total amount held in fixed maturities because no finqa:HIG/2013 evidence was supplied."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:cross_year",
+          "arm": "graph_balanced8",
+          "metrics": {
+            "recall_at_k": 0.3333333333333333,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.2960819109658652,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "-58.6%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F07e2b62f685c34cb37"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F07e2b62f685c34cb37",
+                    "text": "amortization 2014 dac; 2011: -2920 ( 2920 ); 2010: -2665 ( 2665 ); 2009: -3247 ( 3247 )"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage change from 2013 to 2014 because the 2013 amount is not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "96.36%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F13e14f0da0af68cdc5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F13e14f0da0af68cdc5",
+                    "text": "fixed maturities; column 1: $ 24704"
+                  }
+                ],
+                "calculation": "Cannot calculate percentage of total because the total amount is not provided in the evidence."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "m3_global8",
+          "metrics": {
+            "recall_at_k": 0.2857142857142857,
+            "precision_at_k": 0.25,
+            "ndcg_at_k": 0.44830398990253034,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fa6d22dc0f11247e0d5",
+                  "Ff6b56142a56c252b8d",
+                  "F86c57bae4fb2848340",
+                  "F8a9ecddf3246aee3a6"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fa6d22dc0f11247e0d5",
+                    "text": "short-term investments; december 31 2011: 199; december 31 2010: 2014"
+                  },
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F8a9ecddf3246aee3a6",
+                    "text": "as of december 31 , 2011 and 2010 , the company had accepted collateral with a fair value of $ 2.6 billion and $ 1.5 billion , respectively , of which $ 2.0 billion and $ 1.1 billion , respectively , was cash collateral which was invested and recorded in the consolidated balance sheets in fixed maturities and short-term investments with corresponding amounts recorded in other assets and other liabilities ."
+                  }
+                ],
+                "calculation": "Cannot calculate: the supplied evidence does not establish that the short-term investments amount of 199 is part of the total collateral pledged of $1285 for December 31, 2011."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": true,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F95a250217784e546c7"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F95a250217784e546c7",
+                    "text": "less : derivative collateral; column 1: 241"
+                  }
+                ],
+                "calculation": "Cannot calculate: no total amount is provided in the supplied evidence for HIG/2013."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": null,
+                "unit": "millions of dollars",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot calculate: no evidence from finqa:PM/2014 is supplied."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "m3_balanced8",
+          "metrics": {
+            "recall_at_k": 0.42857142857142855,
+            "precision_at_k": 0.375,
+            "ndcg_at_k": 0.47912593929448855,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Fa6d22dc0f11247e0d5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Fa6d22dc0f11247e0d5",
+                    "text": "short-term investments; december 31 2011: 199; december 31 2010: 2014"
+                  }
+                ],
+                "calculation": "Cannot calculate: evidence provides short-term investments of 199 for December 31, 2011, but does not provide the total collateral loaned securities and derivative instruments collateral pledged."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F13e14f0da0af68cdc5"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F13e14f0da0af68cdc5",
+                    "text": "fixed maturities; column 1: $ 24704"
+                  }
+                ],
+                "calculation": "Cannot calculate: evidence provides a total of $25,636 and fixed maturities of $24,704, but does not provide a cash amount."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": 3098,
+                "unit": "millions of dollars",
+                "citations": [
+                  "F9f0490280296833069",
+                  "F10b2cfa74b461b9a62"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F9f0490280296833069",
+                    "text": "our debt issuances in 2014 were as follows : ( in millions ) type face value ( e ) interest rate issuance maturity euro notes ( a ) 20ac750 ( approximately $ 1029 ) 1.875% ( 1.875 % ) march 2014 march 2021 euro notes ( a ) 20ac1000 ( approximately $ 1372 ) 2.875% ( 2.875 % ) march 2014 march 2026 euro notes ( b ) 20ac500 ( approximately $ 697 ) 2.875% ( 2.875 % ) may 2014 may 2029 swiss franc notes ( c ) chf275 ( approximately $ 311 ) 0.750% ( 0.750 % ) may 2014 december 2019 swiss franc notes ( b ) chf250 ( approximately $ 283 ) 1.625% ( 1.625 % ) may 2014 may 2024 u.s ."
+                  },
+                  {
+                    "source_id": "F10b2cfa74b461b9a62",
+                    "text": "euro notes; column 1: ( a ); face value ( e ): 20ac1000 ( approximately $ 1372 ); interest rate: 2.875% ( 2.875 % ); issuance: march 2014; maturity: march 2026"
+                  }
+                ],
+                "calculation": "1029 + 1372 + 697 = 3098"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "lightrag_naive8",
+          "metrics": {
+            "recall_at_k": 0.14285714285714285,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.27487633291429087,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Ff6b56142a56c252b8d",
+                  "F0cafaba890d9b12fb0",
+                  "F8a9ecddf3246aee3a6",
+                  "F69dd3da9a5c33c0556"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F0cafaba890d9b12fb0",
+                    "text": "the following table presents the classification and carrying amount of loaned securities and derivative instruments collateral pledged. ."
+                  },
+                  {
+                    "source_id": "F8a9ecddf3246aee3a6",
+                    "text": "as of december 31 , 2011 and 2010 , the company had accepted collateral with a fair value of $ 2.6 billion and $ 1.5 billion , respectively , of which $ 2.0 billion and $ 1.1 billion , respectively , was cash collateral which was invested and recorded in the consolidated balance sheets in fixed maturities and short-term investments with corresponding amounts recorded in other assets and other liabilities ."
+                  },
+                  {
+                    "source_id": "F69dd3da9a5c33c0556",
+                    "text": "as of december 31 , 2011 and 2010 , collateral pledged having a fair value of $ 1.1 billion and $ 790 , respectively , was included in fixed maturities , afs , in the consolidated balance sheets ."
+                  }
+                ],
+                "calculation": "Cannot compute: evidence does not provide the portion of total collateral loaned securities and derivative instruments collateral pledged that was associated with short-term investments."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot compute: no evidence was supplied for finqa:HIG/2013."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": null,
+                "unit": "millions of dollars",
+                "citations": [],
+                "quotes": [],
+                "calculation": "Cannot compute: no evidence was supplied for finqa:PM/2014."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "lightrag_mix8",
+          "metrics": {
+            "recall_at_k": 0.14285714285714285,
+            "precision_at_k": 0.125,
+            "ndcg_at_k": 0.27487633291429087,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Ff6b56142a56c252b8d",
+                  "F8a9ecddf3246aee3a6",
+                  "F69dd3da9a5c33c0556"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F8a9ecddf3246aee3a6",
+                    "text": "as of december 31 , 2011 and 2010 , the company had accepted collateral with a fair value of $ 2.6 billion and $ 1.5 billion , respectively , of which $ 2.0 billion and $ 1.1 billion , respectively , was cash collateral which was invested and recorded in the consolidated balance sheets in fixed maturities and short-term investments with corresponding amounts recorded in other assets and other liabilities ."
+                  },
+                  {
+                    "source_id": "F69dd3da9a5c33c0556",
+                    "text": "as of december 31 , 2011 and 2010 , collateral pledged having a fair value of $ 1.1 billion and $ 790 , respectively , was included in fixed maturities , afs , in the consolidated balance sheets ."
+                  }
+                ],
+                "calculation": "Cannot be calculated because the evidence does not provide the portion of total collateral pledged that was associated with short-term investments."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [],
+                "quotes": [],
+                "calculation": "No evidence was supplied for finqa:HIG/2013, so the percentage of total amount held as cash cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": null,
+                "unit": "millions of dollars",
+                "citations": [],
+                "quotes": [],
+                "calculation": "No evidence was supplied for finqa:PM/2014, so the total euro notes issued in 2014 in millions of dollars cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": false,
+              "gold_citation_complete": false,
+              "quotes_valid": false,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        },
+        {
+          "id": "dev:multi:3:three_reports",
+          "arm": "graph_balanced8",
+          "metrics": {
+            "recall_at_k": 0.2857142857142857,
+            "precision_at_k": 0.25,
+            "ndcg_at_k": 0.44830398990253034,
+            "all_evidence": 0.0
+          },
+          "facets": [
+            {
+              "id": "1",
+              "answerable": true,
+              "reference": "15.5%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "1",
+                "report": "finqa:HIG/2011",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "Ff6b56142a56c252b8d",
+                  "F86c57bae4fb2848340"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "Ff6b56142a56c252b8d",
+                    "text": "total collateral pledged; december 31 2011: $ 1285; december 31 2010: $ 823"
+                  },
+                  {
+                    "source_id": "F86c57bae4fb2848340",
+                    "text": "fixed maturities afs; december 31 2011: $ 1086; december 31 2010: $ 823"
+                  }
+                ],
+                "calculation": "Cannot compute: the evidence does not provide the short-term investments amount for 2011, so the numerator for the requested percentage is unavailable."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "2",
+              "answerable": true,
+              "reference": "0.74%",
+              "expected_unit": "percent",
+              "output": {
+                "facet_id": "2",
+                "report": "finqa:HIG/2013",
+                "answer": null,
+                "unit": "percent",
+                "citations": [
+                  "F47c38a0741f7b0bbd5",
+                  "F8f173363d296f9c4f8"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F47c38a0741f7b0bbd5",
+                    "text": "total; column 1: $ 25636"
+                  },
+                  {
+                    "source_id": "F8f173363d296f9c4f8",
+                    "text": "short-term investments; column 1: 984"
+                  }
+                ],
+                "calculation": "Cannot compute: the evidence provides total and short-term investments, but no cash amount, so the requested cash percentage cannot be calculated."
+              },
+              "numeric_correct": false,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": true,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": null
+            },
+            {
+              "id": "3",
+              "answerable": true,
+              "reference": "3098",
+              "expected_unit": null,
+              "output": {
+                "facet_id": "3",
+                "report": "finqa:PM/2014",
+                "answer": 3098,
+                "unit": "millions of dollars",
+                "citations": [
+                  "F9f0490280296833069"
+                ],
+                "quotes": [
+                  {
+                    "source_id": "F9f0490280296833069",
+                    "text": "our debt issuances in 2014 were as follows : ( in millions ) type face value ( e ) interest rate issuance maturity euro notes ( a ) 20ac750 ( approximately $ 1029 ) 1.875% ( 1.875 % ) march 2014 march 2021 euro notes ( a ) 20ac1000 ( approximately $ 1372 ) 2.875% ( 2.875 % ) march 2014 march 2026 euro notes ( b ) 20ac500 ( approximately $ 697 ) 2.875% ( 2.875 % ) may 2014 may 2029 swiss franc notes ( c ) chf275 ( approximately $ 311 ) 0.750% ( 0.750 % ) may 2014 december 2019 swiss franc notes ( b ) chf250 ( approximately $ 283 ) 1.625% ( 1.625 % ) may 2014 may 2024 u.s ."
+                  }
+                ],
+                "calculation": "1029 + 1372 + 697 = 3098"
+              },
+              "numeric_correct": true,
+              "unit_correct": null,
+              "citation_ids_valid": true,
+              "gold_citation_complete": false,
+              "quotes_valid": true,
+              "report_correct": true,
+              "abstained": false,
+              "missing_report_correct": null,
+              "numeric_and_evidence_correct": false,
+              "monetary_scale_correct": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "costs": {
+    "answer": {
+      "calls": 15,
+      "errors": 0,
+      "usage_known": 15,
+      "input_tokens": 13137,
+      "output_tokens": 9837
+    },
+    "graph_build": {
+      "calls": 82,
+      "errors": 0,
+      "usage_known": 82,
+      "input_tokens": 175932,
+      "output_tokens": 81904
+    },
+    "graph_query": {
+      "calls": 10,
+      "errors": 0,
+      "usage_known": 10,
+      "input_tokens": 7196,
+      "output_tokens": 573
+    }
+  },
+  "build": {
+    "seconds": 913.0687130999995,
+    "calls": 82,
+    "status": {
+      "pending": 0,
+      "parsing": 0,
+      "analyzing": 0,
+      "processing": 0,
+      "preprocessed": 0,
+      "processed": 78,
+      "failed": 0
+    }
+  },
+  "scoring_preregistration_sha256": "c480039002b7c17a91ae8f0cb3381b2dd5ea7b40da70851c43b3ec717b4c8c65",
+  "stopped_row_pilot": {
+    "status": "stopped_before_retrieval",
+    "calls": 102,
+    "tokens": 215444,
+    "answers": 0,
+    "reason": "Source rows are too fine-grained for efficient table relationship extraction; superseded by source-mapped table blocks. No retrieval or answers were evaluated."
+  }
+}

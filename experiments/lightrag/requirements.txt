@@ -1,0 +1,8 @@
+# Install only in experiments/lightrag/.venv; never in the application environment.
+lightrag-hku==1.5.7
+fastembed==0.8.0
+SQLAlchemy==2.0.52
+httpx==0.28.1
+python-dotenv==1.2.3
+pytest==9.1.1
+neo4j==5.28.2

@@ -1,0 +1,27 @@
+name: finsight-lightrag
+services:
+  neo4j:
+    image: neo4j:5.26.12
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 2g
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:?Run neo4j_experiment.py init first}"
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 768m
+      NEO4J_server_memory_pagecache_size: 256m
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+volumes:
+  neo4j_data:
+  neo4j_logs:

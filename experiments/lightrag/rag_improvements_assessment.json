@@ -1,0 +1,310 @@
+{
+  "status": "complete",
+  "fixture_version": "synthetic-finance-v1",
+  "k": 4,
+  "rerank_candidates": 12,
+  "embedding": "BAAI/bge-small-zh-v1.5",
+  "reranker": "BAAI/bge-reranker-base ONNX",
+  "embedding_load_ms": 881.7591000115499,
+  "reranker_load_ms": 2828.2179000088945,
+  "index_ms": {
+    "baseline": 445.07019995944574,
+    "relevance_only": 442.9313000291586,
+    "cjk": 445.1103999745101,
+    "cjk_rerank": 463.96399999503046
+  },
+  "summary": {
+    "baseline": {
+      "recall_at_k": {
+        "mean": 0.825,
+        "measured": 10,
+        "total": 12
+      },
+      "precision_at_k": {
+        "mean": 0.375,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.8679659019505719,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.6,
+        "measured": 10,
+        "total": 12
+      },
+      "citation_id_validity": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "faithfulness": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "answer_coverage": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "citation_support": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "abstention_correct": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 13.864200009265915,
+        "p95": 24.076549996971146,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 14.027999975951388,
+        "p95": 18.78229497815482,
+        "measured": 24
+      },
+      "answer_ms": {
+        "p50": null,
+        "p95": null,
+        "measured": 0
+      },
+      "errors": 0
+    },
+    "cjk": {
+      "recall_at_k": {
+        "mean": 0.9083333333333333,
+        "measured": 10,
+        "total": 12
+      },
+      "precision_at_k": {
+        "mean": 0.425,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.8324277422721317,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.8,
+        "measured": 10,
+        "total": 12
+      },
+      "citation_id_validity": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "faithfulness": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "answer_coverage": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "citation_support": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "abstention_correct": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 13.765899988356978,
+        "p95": 18.60269000462722,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 14.059250010177493,
+        "p95": 22.78635001857765,
+        "measured": 24
+      },
+      "answer_ms": {
+        "p50": null,
+        "p95": null,
+        "measured": 0
+      },
+      "errors": 0
+    },
+    "cjk_rerank": {
+      "recall_at_k": {
+        "mean": 0.9083333333333333,
+        "measured": 10,
+        "total": 12
+      },
+      "precision_at_k": {
+        "mean": 0.425,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.9062417915578401,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.7,
+        "measured": 10,
+        "total": 12
+      },
+      "citation_id_validity": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "faithfulness": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "answer_coverage": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "citation_support": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "abstention_correct": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 2209.5315999758895,
+        "p95": 2522.0707850065082,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 2148.117500008084,
+        "p95": 2370.880334987305,
+        "measured": 24
+      },
+      "answer_ms": {
+        "p50": null,
+        "p95": null,
+        "measured": 0
+      },
+      "errors": 0
+    },
+    "relevance_only": {
+      "recall_at_k": {
+        "mean": 0.825,
+        "measured": 10,
+        "total": 12
+      },
+      "precision_at_k": {
+        "mean": 0.375,
+        "measured": 10,
+        "total": 12
+      },
+      "ndcg_at_k": {
+        "mean": 0.8679659019505719,
+        "measured": 10,
+        "total": 12
+      },
+      "all_evidence": {
+        "mean": 0.6,
+        "measured": 10,
+        "total": 12
+      },
+      "citation_id_validity": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "faithfulness": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "answer_coverage": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "citation_support": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "abstention_correct": {
+        "mean": null,
+        "measured": 0,
+        "total": 12
+      },
+      "first_query_ms": {
+        "p50": 13.04829996661283,
+        "p95": 20.075139973778274,
+        "measured": 12
+      },
+      "warm_query_ms": {
+        "p50": 13.51155000156723,
+        "p95": 25.173860025824965,
+        "measured": 24
+      },
+      "answer_ms": {
+        "p50": null,
+        "p95": null,
+        "measured": 0
+      },
+      "errors": 0
+    }
+  },
+  "diagnostic_probes": [
+    {
+      "probe": "scope",
+      "arm": "baseline",
+      "top1": "noise"
+    },
+    {
+      "probe": "scope",
+      "arm": "relevance_only",
+      "top1": "gold"
+    },
+    {
+      "probe": "scope",
+      "arm": "cjk",
+      "top1": "gold"
+    },
+    {
+      "probe": "chinese",
+      "arm": "baseline",
+      "top1": "noise"
+    },
+    {
+      "probe": "chinese",
+      "arm": "relevance_only",
+      "top1": "noise"
+    },
+    {
+      "probe": "chinese",
+      "arm": "cjk",
+      "top1": "gold"
+    }
+  ],
+  "baseline_sha256": "c9b0b9a78b516b436580b037c56b33aea0ae3ddf6ad898318eeaa11a669e02bc",
+  "limitations": [
+    "Synthetic 16-document corpus, 10 answerable and 2 unscored abstention questions",
+    "Memory backend; no live PostgreSQL plan or latency measurement",
+    "No generated answers or LLM judge; evidence recall is not answer quality",
+    "Rerank latency includes retrieval; 3 repeats, models warmed, CPU threads=2",
+    "Graph retrieval and production embedding unchanged; zero LLM API calls"
+  ]
+}

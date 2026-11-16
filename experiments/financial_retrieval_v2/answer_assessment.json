@@ -1,0 +1,126 @@
+{
+  "status": "complete",
+  "seal": {
+    "dataset_sha256": "10e15424547d466ebac82821476d5b69213f55947a09c641411b769699c03c6c",
+    "retrieval_report_sha256": "4246a7b76b410ab5d36a95dc996fd9e66c7a2b0cf28b514a3cd5f53117fd0442",
+    "audit_code_sha256": "264976723f191846187af71a067e260c8e61169aaff08eccc850894b78f17b76",
+    "sample_ids": [
+      "finqa:PPG/2018/page_60.pdf-1",
+      "finqa:MS/2017/page_57.pdf-2",
+      "finqa:MS/2013/page_139.pdf-2",
+      "finqa:LKQ/2007/page_76.pdf-4",
+      "finqa:HFC/2018/page_43.pdf-3",
+      "finqa:ALXN/2007/page_49.pdf-2",
+      "finqa:ETFC/2011/page_82.pdf-3",
+      "finqa:EOG/2016/page_74.pdf-1",
+      "finqa:PKG/2001/page_86.pdf-2",
+      "finqa:SLG/2013/page_133.pdf-2",
+      "finqa:EMR/2017/page_66.pdf-1",
+      "finqa:PPG/2018/page_61.pdf-1",
+      "finqa:AWK/2017/page_128.pdf-3",
+      "finqa:ETR/2013/page_15.pdf-2",
+      "finqa:ADBE/1999/page_64.pdf-2",
+      "finqa:LKQ/2018/page_83.pdf-3",
+      "test:multi:1:cross_company",
+      "test:multi:3:cross_company",
+      "test:multi:0:cross_company",
+      "test:multi:5:cross_year",
+      "test:multi:6:cross_year",
+      "test:multi:0:cross_year",
+      "test:multi:7:three_reports",
+      "test:multi:8:three_reports",
+      "test:multi:5:three_reports",
+      "test:multi:5:missing_report",
+      "test:multi:7:missing_report",
+      "test:multi:0:missing_report"
+    ]
+  },
+  "model": "deepseek-flash",
+  "summary": {
+    "single": {
+      "previous": {
+        "cases": 16,
+        "errors": 0,
+        "numeric_correct": 5,
+        "numeric_scored": 16,
+        "unit_correct": 4,
+        "unit_scored": 6,
+        "numeric_and_evidence_correct": 5,
+        "missing_report_correct": 0,
+        "missing_report_scored": 0,
+        "answered_facets": 7,
+        "quotes_valid": 8,
+        "cited_facets": 8,
+        "complete_cases_scored": 16,
+        "complete_cases_unscored": 0,
+        "complete_cases": 5
+      },
+      "selected": {
+        "cases": 16,
+        "errors": 0,
+        "numeric_correct": 8,
+        "numeric_scored": 16,
+        "unit_correct": 7,
+        "unit_scored": 9,
+        "numeric_and_evidence_correct": 8,
+        "missing_report_correct": 0,
+        "missing_report_scored": 0,
+        "answered_facets": 10,
+        "quotes_valid": 12,
+        "cited_facets": 12,
+        "complete_cases_scored": 16,
+        "complete_cases_unscored": 0,
+        "complete_cases": 8
+      }
+    },
+    "multi": {
+      "previous": {
+        "cases": 12,
+        "errors": 0,
+        "numeric_correct": 6,
+        "numeric_scored": 23,
+        "unit_correct": 2,
+        "unit_scored": 3,
+        "numeric_and_evidence_correct": 4,
+        "missing_report_correct": 3,
+        "missing_report_scored": 3,
+        "answered_facets": 7,
+        "quotes_valid": 11,
+        "cited_facets": 11,
+        "complete_cases_scored": 11,
+        "complete_cases_unscored": 1,
+        "complete_cases": 0
+      },
+      "selected": {
+        "cases": 12,
+        "errors": 0,
+        "numeric_correct": 11,
+        "numeric_scored": 23,
+        "unit_correct": 4,
+        "unit_scored": 7,
+        "numeric_and_evidence_correct": 6,
+        "missing_report_correct": 3,
+        "missing_report_scored": 3,
+        "answered_facets": 13,
+        "quotes_valid": 16,
+        "cited_facets": 16,
+        "complete_cases_scored": 11,
+        "complete_cases_unscored": 1,
+        "complete_cases": 0
+      }
+    }
+  },
+  "tokens": 158975,
+  "limitations": [
+    "16 numerical single-report cases; 12 constructed multi-report summary cases",
+    "Unknown source answer units remain unscored; numeric-and-evidence is not full unit correctness",
+    "Gold citations are minimal author evidence; alternative valid evidence may be undercounted",
+    "Literal quote validity does not prove entailment of the full narrative summary"
+  ],
+  "summary_recalculation": {
+    "reason": "Exclude the case with an absent author reference from the fully scorable complete-case denominator; no generation, prompt, per-facet score, or retrieval change.",
+    "source_report": "experiments\\financial_retrieval_v2\\runs\\20260914T164731Z-answers\\report.json",
+    "source_sha256": "39a5ece9d3f1453e7af7faa803706e21f747ecadd509ed695b92c001434c8bd9",
+    "scoring_code_sha256": "b972d2039452daae5861cb211e13218e18f0f7ae5da46b4a5839cddeec31dcdf"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "model": "BAAI/bge-m3",
+  "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+  "weights_sha256": "b5e0ce3470abf5ef3831aa1bd5553b486803e83251590ab7ff35a117cf6aad38",
+  "weights_bytes": 2271145830,
+  "image_id": "sha256:762127e0cb8faba4abd226b64e7f2b05445486e016aa0ced91150babfff3691e",
+  "image_size_bytes": 501180065,
+  "dependencies": {
+    "FlagEmbedding": "1.3.5",
+    "torch": "2.8.0+cpu",
+    "transformers": "4.57.6",
+    "sentence-transformers": "5.2.2",
+    "peft": "0.18.1"
+  },
+  "device": "cpu",
+  "dimensions": 1024,
+  "max_length": 512,
+  "torch_threads": 2,
+  "batch_size": 4,
+  "container": "finsight-embedding-embedding-1",
+  "endpoint": "http://127.0.0.1:8010",
+  "volume": "finsight-embedding_embedding_models",
+  "cpus": 2,
+  "memory_limit_gib": 4,
+  "restored_on": "2026-09-15",
+  "gpu_status": "paused_unvalidated"
+}
