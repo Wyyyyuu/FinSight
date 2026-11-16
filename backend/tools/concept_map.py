@@ -4,7 +4,8 @@ import logging
 import os
 from typing import Any
 
-from backend.tools.http import _http_get
+from backend.tools.cn_market_common import market_http_get as _http_get
+from backend.tools.cn_market_common import CNMarketSourceError, response_json, market_result, market_failure
 from backend.utils.quote import safe_float
 
 logger = logging.getLogger(__name__)
@@ -36,14 +37,15 @@ def fetch_concept_map(*, keyword: str = "", limit: int = 20) -> dict[str, Any]:
             timeout=_EASTMONEY_TIMEOUT,
             headers={"User-Agent": _EASTMONEY_USER_AGENT},
         )
-        if getattr(resp, "status_code", 0) == 200:
-            payload = resp.json()
-            data = payload.get("data") if isinstance(payload, dict) else None
-            diff = data.get("diff") if isinstance(data, dict) else None
-            if isinstance(diff, list):
-                rows = [item for item in diff if isinstance(item, dict)]
+        payload = response_json(resp)
+        data = payload.get('data')
+        diff = data.get('diff') if isinstance(data, dict) else None
+        if not isinstance(diff, list):
+            raise CNMarketSourceError('概念板块数据格式异常，请稍后重试。')
+        rows = [item for item in diff if isinstance(item, dict)]
     except Exception as exc:
         logger.info("fetch_concept_map failed: %s", exc)
+        return market_failure('eastmoney_concept_board', exc)
 
     kw = str(keyword or "").strip().lower()
     items: list[dict[str, Any]] = []
@@ -65,14 +67,8 @@ def fetch_concept_map(*, keyword: str = "", limit: int = 20) -> dict[str, Any]:
             }
         )
 
-    return {
-        "success": True,
-        "keyword": keyword,
-        "items": items,
-        "count": len(items),
-        "source": "eastmoney_concept_board",
-        "market": "CN",
-    }
+    return market_result(items, 'eastmoney_concept_board', keyword=keyword,
+        note='概念板块按涨跌幅排序；非交易时段为最近行情快照。')
 
 
 __all__ = ["fetch_concept_map"]

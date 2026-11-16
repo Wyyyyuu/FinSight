@@ -191,6 +191,11 @@ export interface CNMarketListResponse {
   count: number;
   source?: string;
   market?: string;
+  error?: string;
+  warning?: string | null;
+  note?: string;
+  as_of?: string | null;
+  retrieved_at?: string;
 }
 
 export interface BacktestRunRequest {

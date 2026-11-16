@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-test('phase-labs cn market panel loads fund-flow data', async ({ page }) => {
+test('CN market workspace loads fund-flow data on entry', async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem('finsight-welcome-gate-passed', '1');
     localStorage.setItem('finsight-entry-mode', 'anonymous');
-    localStorage.setItem('finsight-session-id', 'public:anonymous:e2e-phase-labs');
+    localStorage.setItem('finsight-session-id', 'public:anonymous:e2e-cn-market');
   });
 
   await page.route('**/api/cn/market/fund-flow**', async (route) => {
@@ -19,8 +19,7 @@ test('phase-labs cn market panel loads fund-flow data', async ({ page }) => {
     });
   });
 
-  await page.goto('/phase-labs');
-  await page.getByTestId('cn-market-load-btn').click();
+  await page.goto('/cn-market');
   await expect(page.getByText('600519.SH')).toBeVisible();
   await expect(page.getByText('贵州茅台')).toBeVisible();
 });

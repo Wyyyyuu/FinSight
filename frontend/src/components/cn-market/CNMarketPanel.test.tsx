@@ -1,11 +1,14 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { apiClient } from '../../api/client';
 
 import {
   ConceptTable,
   FundFlowTable,
   LhbTable,
   LimitBoardTable,
+  NorthboundTable,
+  loadCNMarketTab,
 } from './CNMarketPanel';
 
 /** 把 JSX 渲染为静态 HTML 字符串 */
@@ -27,7 +30,7 @@ const limitBoardRows = [
 ];
 
 const lhbRows = [
-  { symbol: '002594', name: '比亚迪', change_percent: 5.6, net_buy: 8.8e7, reason: '日涨幅偏离值达7%的证券' },
+  { symbol: '002594', name: '比亚迪', change_percent: 5.6, net_buy: 8.8e7, trade_date: '2026-09-21 00:00:00', reason: '日涨幅偏离值达7%的证券' },
 ];
 
 const conceptRows = [
@@ -51,8 +54,8 @@ describe('CNMarketPanel tables — 移动端横向滚动适配', () => {
 
   it('LhbTable: 每个表头/单元格都带 whitespace-nowrap', () => {
     const html = render(<LhbTable rows={lhbRows} />);
-    // 5 个 th + 每行 5 个 td * 1 行 = 5 + 5 = 10
-    expect(countOf(html, 'whitespace-nowrap')).toBe(10);
+    // 6 个 th + 每行 6 个 td * 1 行 = 6 + 6 = 12
+    expect(countOf(html, 'whitespace-nowrap')).toBe(12);
   });
 
   it('ConceptTable: 每个表头/单元格都带 whitespace-nowrap', () => {
@@ -74,6 +77,36 @@ describe('CNMarketPanel tables — 移动端横向滚动适配', () => {
 // ── 数据正常渲染断言 ───────────────────────────────────────────
 
 describe('CNMarketPanel tables — 数据渲染', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('北向展示日成交额，缺失值不显示成零', () => {
+    const html = render(<NorthboundTable rows={[{ trade_date: '2026-09-21', sh_turnover: 1e8, sz_turnover: null, total_turnover: 2e8 }]} />);
+    expect(html).toContain('沪股通成交额');
+    expect(html).toContain('2026-09-21');
+    expect(html).toContain('1.00亿');
+    expect(html).not.toContain('净流入');
+    expect(html).not.toContain('0.00');
+    expect(html).toContain('>-</td>');
+    const fund = render(<FundFlowTable rows={[{ symbol: '000001', main_net_inflow: null, change_percent: null }]} />);
+    expect(fund).not.toContain('0.00');
+  });
+
+  it('上游业务失败保留具体原因', async () => {
+    vi.spyOn(apiClient, 'getCNFundFlow').mockResolvedValue({ success: false, items: [], count: 0, error: '行情源暂时不可用' });
+    await expect(loadCNMarketTab('fund_flow')).rejects.toThrow('行情源暂时不可用');
+  });
+
+  it('网关错误展示服务端说明', async () => {
+    vi.spyOn(apiClient, 'getCNNorthbound').mockRejectedValue({ isAxiosError: true, response: { data: { detail: '访客会话已过期' } } });
+    await expect(loadCNMarketTab('northbound')).rejects.toThrow('访客会话已过期');
+  });
+
+  it('正常空池和部分数据告警保持可区分', async () => {
+    const response = { success: true, items: [], count: 0, warning: '跌停池暂不可用' };
+    vi.spyOn(apiClient, 'getCNLimitBoard').mockResolvedValue(response);
+    await expect(loadCNMarketTab('limit_board')).resolves.toEqual(response);
+  });
+
   it('FundFlowTable: mock 行数据出现在输出中', () => {
     const html = render(<FundFlowTable rows={fundFlowRows} />);
     expect(html).toContain('600519');
@@ -94,6 +127,7 @@ describe('CNMarketPanel tables — 数据渲染', () => {
     const html = render(<LhbTable rows={lhbRows} />);
     expect(html).toContain('002594');
     expect(html).toContain('比亚迪');
+    expect(html).toContain('2026-09-21');
     expect(html).toContain('日涨幅偏离值达7%的证券'); // 上榜原因
   });
 

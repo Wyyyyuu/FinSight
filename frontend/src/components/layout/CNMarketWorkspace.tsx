@@ -16,7 +16,7 @@ export function CNMarketWorkspace() {
           <TrendingUp size={20} className="text-fin-primary" />
           <div>
             <h1 className="text-lg font-semibold text-fin-text">A 股市场</h1>
-            <p className="text-xs text-fin-muted">资金流向 · 北向资金 · 涨跌停 · 龙虎榜 · 概念板块</p>
+            <p className="text-xs text-fin-muted">资金流向 · 北向成交 · 涨跌停 · 龙虎榜 · 概念板块</p>
           </div>
         </header>
 
