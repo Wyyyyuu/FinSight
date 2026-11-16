@@ -63,6 +63,173 @@ $env:ANNUAL_REPORT_MODEL_CACHE = Join-Path (Get-Location) '.annual-models'
 
 同时设置 `ANNUAL_REPORT_LLM_BASE_URL`、`ANNUAL_REPORT_LLM_API_KEY`、`ANNUAL_REPORT_LLM_MODEL` 才调用兼容 Chat Completions API。未配置时使用“证据摘录”。回答的金额计算始终由 Decimal 完成，模型只选择来源中的原文片段；不在来源中的引文、伪造引用和模型错误会触发回退。密钥只放本机环境变量，不写入代码、浏览器或版本库。
 
+### Agentic RAG 规划与补查（可选）
+
+配置上述年报模型后，在启动年报服务的环境中设置 `ANNUAL_REPORT_AGENTIC_RAG_ENABLED=1`。服务默认使用原有检索与规则补查。`mode` 继续决定用 BM25 还是混合检索，后端在每个问题上自动选择以下路径。
+
+| 问题和证据情况 | LangGraph 工作流选择 |
+| --- | --- |
+| 问题可用固定指标模板处理 | 按原问题做首轮检索，使用确定性金额和原因检查 |
+| 问题含未覆盖的指标或分析要求，例如盈利质量、海外业务收入 | Agent 在首轮搜索前拟定至多 3 项取证要点和检索词，检索后按原文核对要点及原问题 |
+| 证据齐备 | 直接计算和回答，跳过补查 |
+| 常规查数缺证据，或 Agent 不可用 | 使用规则补查 |
+| 固定模板的原因分析或复合比较，已选年报中有可定位的金额或原因缺口 | 首轮补查允许 Agent 选择一个缺口，生成一条检索词 |
+| 开放题的原文未覆盖要点 | 预算允许时，采用 Agent 给出的检索词补查一轮，再核对证据 |
+| 缺少所问公司的已选报告、数值口径冲突、已知前提不成立或首轮检索失败 | 由原规则处理，保留未解决的证据缺口 |
+| 补查预算用完 | 结束检索，返回已核对的结果和剩余缺口 |
+
+**是否进入 Agent 路径由后端规则决定。** 固定模板补查只发送问题和结构化缺口，模型选择一个候选并生成检索词。开放题规划发送问题与已选资料的公司和年度，之后的核对请求附带最多 18 段本次检索的原文，每段最多 1000 字。模型按要点返回原文摘录，程序验证来源编号和逐字引用，再展示核验后的摘录。开放题最多规划一次、核对两次、补查一轮。检索始终在用户所选文档及年度范围内，并计入原有预算。
+
+开放题规划失败时，按原问题检索并标明规划未完成。核对失败或部分要点缺证据时，保留已有原文并报告缺口。固定模板的补查计划失败时，回到规则补查。
+
+分析页的“分析过程”会显示路由理由、取证要点和核对进度。API 的 `metrics.retrieval_strategy` 区分 `standard`、`rule_supplement`、`agentic_supplement` 和 `agentic_planned`，每轮详情可在 `trace` 中查看。开放题的语义覆盖由模型评估，代码核验引用和资料范围，语义判断的质量需用真实问题评测。
+
+### 本地意图识别（可选）
+
+启用本地模型后的路由顺序是固定规则、MiniRBT v3、年报 LLM。固定模板直接进入证据与计算节点。模板未覆盖时，后端先从原句核对一家公司、一个明确财务年度和一个支持的金额指标，再让本地模型判定查金额、算同比或开放取证。口径限定、复合问题、低分或无法确定的候选交给 LLM。LLM 首轮可同时返回候选操作和取证清单，仍须通过相同的口径校验。分析过程和 `metrics.intent_source` 记录 `rules`、`minirbt`、`llm` 或 `unresolved`，显式选择其他本地模型时会显示对应模型名。
+
+服务端使用 `requirements-annual.txt` 已含的 ONNX 推理栈，从本地目录加载模型。已有 MiniRBT v3 导出权重时，直接运行启动命令。首次训练见下文的 MiniRBT 扩大样本对照。
+
+```powershell
+.\scripts\start-annual-reports.ps1 -Intent
+```
+
+`-Intent` 默认选择 `.annual-models/annual-intent-minirbt-v3`。主后端通过 `ANNUAL_REPORT_INTENT_MODEL_DIR` 指定模型目录，启动脚本也接受显式目录。第三层在启动前设置 `ANNUAL_REPORT_AGENTIC_RAG_ENABLED=1` 和对应的三个年报 LLM 环境变量。已启动的服务如果无法加载本地模型，会把候选交给已启用的 LLM。LLM 不可用时保留未解决的意图和检索到的原文。
+
+#### Qwen LoRA 微调
+
+两个 Qwen 版本使用相同的 4,328 条训练问句和 556 条验证问句。分类头基线使用冻结的 Qwen3-0.6B-Base 特征。LoRA 版在后 12 层的注意力 Q、V 投影上训练 rank 8 的适配器，同时训练三分类头。按验证集选择第 4 轮，再合并适配器，导出 CPU INT8 ONNX，逐条校准部署阈值至 `0.50`。
+
+微调环境需要 PyTorch、Transformers 和额外的 `peft==0.18.0`、`accelerate==1.12.0`。使用 `--device cuda` 时，训练环境需要能调用 CUDA 的 PyTorch。推理继续使用年报工作台原有的 ONNX 依赖。
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.train_annual_qwen_intent
+.\.venv\Scripts\python.exe -m scripts.train_annual_qwen_intent --lora --device cuda
+.\.venv\Scripts\python.exe -m scripts.eval_annual_intent --model .annual-models/annual-intent-qwen-lora --compare .annual-models/annual-intent-qwen --compare .annual-models/annual-intent-minirbt-v3 --suite v3 --out .annual-models/annual-intent-qwen-lora-v3.json
+```
+
+在 54 道 v3 留出题上使用同一批合成年报、相同口径校验和 BM25，并模拟远端 LLM 超时。
+
+| 模型 | 本地答对 | LLM 规划请求 | 开放题误报完成 |
+| --- | --- | --- | --- |
+| Qwen 分类头 | 25 / 36 | 29 / 54 | 0 / 18 |
+| Qwen LoRA | 29 / 36 | 25 / 54 | 0 / 18 |
+| MiniRBT v3 | 30 / 36 | 24 / 54 | 0 / 18 |
+
+另两套对照题上，Qwen LoRA 和 MiniRBT v3 的本地答对数分别为 23 / 24 对 23 / 24，以及 11 / 14 对 12 / 14。本机使用相同的 12 条问句测试热推理，CPU 分类耗时中位数分别为 200.2 ms 和 7.3 ms。这些历史权重可通过 `ANNUAL_REPORT_INTENT_MODEL_DIR` 显式加载。复制 Qwen 模型目录时需保留外部 ONNX 权重文件。
+
+#### rsLoRA 与财务口径边界
+
+rsLoRA 将低秩更新的缩放从 `α/r` 改为 `α/√r`。这版沿用后 12 层的 Q、V 投影，把 rank 从 8 提到 16，并将 `α` 设为 8，使两版实际缩放都为 2。共训练 986,115 个适配器和分类头参数。部署前将适配器合并到基座，再导出 CPU INT8 ONNX。[rsLoRA 论文](https://arxiv.org/abs/2312.03732)
+
+新增成对样本，保留公司、财年和指标，修改报告期间、业务范围、同比基期或是否要求原因归因。4,904 条问句参与训练，278 条用于选轮次，422 条用于量化后的置信度校准。选轮次和校准按问法模板拆分，最终评测另有 12 对手写边界题。温度缩放只调整 softmax 的置信度，不改变类别排序。对 INT8 模型逐条推理拟合温度后，将缩放折入分类头，再根据验证集选择本地接题阈值。运行时仍核对公司、期间和指标，超范围或低置信度走 LLM。[温度缩放论文](https://proceedings.mlr.press/v70/guo17a.html)
+
+```powershell
+# CUDA PyTorch 环境中训练
+python -m scripts.train_annual_qwen_intent --rslora --device cuda --train-only --adapter-dir .annual-models/annual-intent-qwen-rslora-adapter
+# CPU PyTorch 环境中合并、量化和校准
+python -m scripts.train_annual_qwen_intent --rslora --device cpu --adapter-dir .annual-models/annual-intent-qwen-rslora-adapter
+.\.venv\Scripts\python.exe -m scripts.eval_annual_intent --model .annual-models/annual-intent-qwen-rslora --compare .annual-models/annual-intent-qwen-lora --compare .annual-models/annual-intent-minirbt-v3 --suite boundary --out .annual-models/annual-intent-qwen-rslora-boundary.json
+```
+
+指定 `--adapter-dir` 会单独保存 PEFT 权重和分类头。导出中断时可用同一个目录重跑，复用已有适配器与分类头。边界题同时统计两侧均分对的对数、模型把开放题判成查数的次数，以及经过工作台口径校验后的误报完成数。
+
+| 留出题的本地正确数 | Qwen LoRA | Qwen rsLoRA | MiniRBT v3 |
+| --- | --- | --- | --- |
+| v3 主评测 | 29 / 36 | 30 / 36 | 30 / 36 |
+| original | 23 / 24 | 22 / 24 | 23 / 24 |
+| fresh | 11 / 14 | 12 / 14 | 12 / 14 |
+| 财务口径边界 | 10 / 12 | 10 / 12 | 11 / 12 |
+
+主评测中，rsLoRA 首轮 LLM 规划请求从普通 LoRA 的 25 / 54 降到 24 / 54。两种 LoRA 在边界题的原始分类中都判对 6 / 12 对，且都把 5 道开放题判成查数，经过范围校验后，两者误报开放题已完成均为 0 / 12。评测使用合成年报与模拟 LLM 超时。rsLoRA、样本增广和校准在同一版本引入，表中比较的是完整方案。
+
+对同一份 INT8 权重单独比较温度缩放前后。拟合温度约为 2.32，主留出集的 NLL 从 0.489 降到 0.256，边界留出集从 1.145 降到 0.587，类别排序一致。同机用相同的 12 条问句比较热推理，rsLoRA 与 MiniRBT v3 的 CPU 分类耗时中位数分别为 47.9 ms 和 2.4 ms。
+
+#### 成对问句续训
+
+从上一版 rsLoRA 适配器和分类头出发，用较低学习率续训，混合 4,904 条普通训练问句与 288 对新问句。新问句保留指标与提问方式，改变调整口径、基期、比较对象或是否要求归因。两条问句进入同一批次，保留逐题交叉熵，同时计算两个方向的分差。查数题要求正确查数类别得分高于开放类别，开放题则要求相反。用较小的分差计算 hinge 惩罚，目标分差为 1。
+
+把原权重纳入选轮次对照，先要求通过口径校验的普通验证题答对数最多下降 2 道，再按 72 对验证问句的两侧正确数选模型。导出后仍在独立校准集上拟合温度。原口径评测用于分析错因，新增的 `boundary-v2` 由 12 对新问句组成，和训练、选轮次、校准数据分开。[Contrast Sets 论文](https://aclanthology.org/2020.findings-emnlp.117/)
+
+```powershell
+# CUDA PyTorch 环境中续训
+python -m scripts.train_annual_qwen_intent --paired --device cuda --epochs 2 --train-only --init-adapter .annual-models/annual-intent-qwen-rslora-adapter --adapter-dir .annual-models/annual-intent-qwen-rslora-paired-adapter
+# CPU PyTorch 环境中合并、量化和校准
+python -m scripts.train_annual_qwen_intent --paired --device cpu --adapter-dir .annual-models/annual-intent-qwen-rslora-paired-adapter
+.\.venv\Scripts\python.exe -m scripts.eval_annual_intent --model .annual-models/annual-intent-qwen-rslora-paired --compare .annual-models/annual-intent-qwen-rslora --compare .annual-models/annual-intent-minirbt-v3 --suite boundary-v2 --out .annual-models/annual-intent-qwen-rslora-paired-boundary-v2.json
+```
+
+| 相同口径规则下的评测 | 原 rsLoRA | 成对续训 |
+| --- | --- | --- |
+| 原边界题两侧判对 | 6 / 12 | 11 / 12 |
+| 新边界题两侧判对 | 9 / 12 | 8 / 12 |
+| v3 主评测本地答对 | 30 / 36 | 27 / 36 |
+| original 本地答对 | 22 / 24 | 20 / 24 |
+| fresh 本地答对 | 12 / 14 | 10 / 14 |
+
+续训在原边界题上把开放题误分为查数的次数从 5 降到 0，新题和常规题覆盖下降。另试在 422 条校准问句上降低开放类别的 logit，正确本地分流从 211 恢复到 221，但有 37 道开放题被模型改判为查数。Qwen 对照采用原 rsLoRA 权重，续训版保存在 `.annual-models/annual-intent-qwen-rslora-paired` 供复测。
+
+排查还发现，一些明确同比问句被句式校验提前拦截。补充“一比”“高出”和句首“跟上年对照”等表达后，使用同一份原 rsLoRA 权重，v3 本地答对数从 30 / 36 到 31 / 36，original 从 22 / 24 到 23 / 24，原边界题从 10 / 12 到 11 / 12。两套边界题中的开放题均进入 LLM 规划。
+
+#### 历史对照
+
+历史训练脚本 `scripts.train_annual_intent` 默认导出 TinyBERT，也可用 `--model minirbt` 或 `--model mmbert` 导出其他模型。通过 `ANNUAL_REPORT_INTENT_MODEL_DIR` 可显式选择这些对照模型。
+
+本地对照使用 40 道未参与训练和阈值选择的题。24 道预期可本地查数或计算，另有 16 道开放或限定口径的题。三组使用相同文档和证据检查，远端 LLM 模拟超时，记录首轮调用次数。
+
+| 路由 | 本地答对 | 首轮 LLM 请求 | 开放题误报完成 |
+| --- | --- | --- | --- |
+| 关闭 TinyBERT | 5 / 24 | 35 / 40 | 0 / 16 |
+| 启用 TinyBERT | 17 / 24 | 23 / 40 | 0 / 16 |
+| 相同口径校验和查询改写，改用确定性分类 | 20 / 24 | 20 / 40 | 0 / 16 |
+
+当前结果支持改进口径校验和同比表达处理。这个小规模合成评测里，TinyBERT 的本地正确覆盖低于同条件下的确定性分类，因此模型保持可选。结果只覆盖本地计算和分流，真实 LLM 的回答质量和线上延迟需另行评测。
+
+mmBERT-small 在 CPU 上微调最后四层、最终归一化层和分类头。下面的命令对比已导出的 mmBERT 和 MiniRBT。将 `--suite fresh` 改为 `--suite original` 可以复测原来的 40 道题。
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.train_annual_intent --model mmbert
+.\.venv\Scripts\python.exe -m scripts.eval_annual_intent --model .annual-models/annual-intent-mmbert --compare .annual-models/annual-intent-minirbt --suite fresh --out .annual-models/annual-intent-mmbert-fresh.json
+$env:ANNUAL_REPORT_INTENT_MODEL_DIR = (Resolve-Path .annual-models/annual-intent-mmbert).Path
+.\scripts\start-annual-reports.ps1 -Intent
+```
+
+使用同样的 630 条训练问句和 60 条阈值验证问句，分别在原来的 40 道题和新写的 22 道题上筛选。两组都用合成年报和实际 ONNX、BM25，远端 LLM 模拟超时。下表统计本地查数及计算的正确题数，以及首轮发给 LLM 的题数。
+
+| 路由 | 原题本地答对 | 新题本地答对 | 原题转 LLM | 新题转 LLM |
+| --- | --- | --- | --- | --- |
+| 扩展规则 | 20 / 24 | 12 / 14 | 20 / 40 | 10 / 22 |
+| MiniRBT | 19 / 24 | 12 / 14 | 21 / 40 | 10 / 22 |
+| mmBERT | 19 / 24 | 11 / 14 | 21 / 40 | 11 / 22 |
+
+三组都没有把两套题里的 24 道开放题误报为已完成。这次的 CPU 部分微调结果支持继续将 mmBERT 作为可选对照。新题用于额外筛选，仍需用真实用户问句验证实际覆盖。
+
+#### MiniRBT 第二轮微调
+
+`v2` 使用同一个固定版本的 MiniRBT-H256 基座。保留首轮问法，增加口语、指标在年份之前、比较基期在句首等表达，也加入境外营收、扣非利润、季度数据和附带原因分析等易混淆题。公司、财务年度和指标口径仍由代码核对。训练集、选轮次与阈值的验证集、最终对照题分开维护。
+
+训练使用 1,563 条问句，AdamW 学习率为 `8e-5`，最多训练 5 轮。在 67 条验证问句上选中第 4 轮，置信度阈值为 `0.65`。v2 权重可用于与后续版本对照。
+
+在新增的 26 道题上，旧权重配原句式校验本地答对 1 / 16，只换句式校验后答对 14 / 16，再换 v2 权重答对 16 / 16。首轮 LLM 请求数分别为 25 / 26、12 / 26 和 10 / 26。扩展规则对照同样答对 16 / 16。10 道开放题都保留给 LLM。对照用合成年报和实际 ONNX、BM25，远端 LLM 模拟超时。
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.train_annual_intent --model minirbt --profile v2
+.\.venv\Scripts\python.exe -m scripts.eval_annual_intent --model .annual-models/annual-intent-minirbt-v2 --compare .annual-models/annual-intent-minirbt --suite v2 --out .annual-models/annual-intent-minirbt-v2-v2.json
+```
+
+#### MiniRBT 扩大样本对照
+
+`v3` 使用 4,328 条训练问句和 556 条验证问句，并留出 54 道独立编写的最终对照题。新增问法涵盖年报口语表达、时间与金额单位、换口径取数、单季数据、比较对象变更以及复合问句。训练和验证使用不同的报告年度，训练、验证和新对照题之间没有完全重复的问句。标签仍为查金额、算同比和开放取证三类。
+
+同一 MiniRBT-H256 基座全量微调 4 轮，标签平滑为 `0.03`。验证时先比较通过公司、财年和指标校验的正确本地任务数，再用开放题误判数和分类正确率选择权重。评测同时统计模型独立分类和完整工作流，规则、BM25 与金额计算沿用相同配置。
+
+验证选中第 3 轮，阈值为 `0.65`。54 道留出题上，独立分类正确数从 v2 的 45 道提升到 v3 的 51 道，18 道开放题中被模型预测为固定取数的次数从 7 次降到 1 次。两版完整工作流均本地答对 30 / 36，均有 24 / 54 题转 LLM。两版使用相同的口径检查，测试用合成年报并模拟远端 LLM 超时。
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.train_annual_intent --model minirbt --profile v3
+.\.venv\Scripts\python.exe -m scripts.eval_annual_intent --model .annual-models/annual-intent-minirbt-v3 --compare .annual-models/annual-intent-minirbt-v2 --suite v3 --out .annual-models/annual-intent-minirbt-v3-v3.json
+```
+
 ## 使用与边界
 
 ### 抓取其他公司的公开年报

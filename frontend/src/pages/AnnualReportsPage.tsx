@@ -220,7 +220,7 @@ export function AnnualReportsPage() {
       if (controller.signal.aborted) return;
       setDocuments((current) => [...data.documents, ...current.filter((item) => !data.documents.some((doc) => doc.id === item.id))]);
       setSelectedIds(data.documents.map((doc) => doc.id));
-      setQuestion(EXAMPLES[0]);
+      setQuestion('2024 年营业收入同比增长了多少？');
       setNotice('已载入人工合成示例，仅供体验流程，不代表真实公司年报。');
     } catch (error) {
       if (!controller.signal.aborted) setUploadError(message(error));

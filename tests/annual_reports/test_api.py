@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.annual_reports import workflow
 from backend.annual_reports.app import create_app
 from backend.annual_reports.documents import AnnualReportStorageError, AnnualReportStore
 from backend.api.annual_report_router import _store_at
@@ -69,6 +72,35 @@ def test_end_to_end_demo_analysis_and_citations(client):
     assert all(c["document_id"] in ids and c["page"] >= 1 for c in result["citations"])
     assert all(c["year"] in {2023, 2024} for c in result["citations"])
     assert result["calculations"]
+
+
+def test_open_question_uses_report_evidence_without_confusing_segment_and_total_revenue(client, monkeypatch):
+    monkeypatch.setenv("ANNUAL_REPORT_AGENTIC_RAG_ENABLED", "1")
+    monkeypatch.setenv("ANNUAL_REPORT_LLM_BASE_URL", "https://annual-model.example/v1")
+    monkeypatch.setenv("ANNUAL_REPORT_LLM_API_KEY", "test-key")
+    monkeypatch.setenv("ANNUAL_REPORT_LLM_MODEL", "test-model")
+    original = "2024年海外业务收入为 30 亿元。"
+    selected = upload(client, text=original).json()["id"]
+    other = upload(client, company="乙公司", text="2024年海外业务收入为 99 亿元。").json()["id"]
+
+    def model(config, instruction, payload, **kwargs):
+        if "reports" in payload:
+            return json.dumps({"checks": [{"need": "海外业务收入", "query": "海外业务收入 境外销售"}]})
+        assert [item["text"] for item in payload["evidence"]] == [original]
+        return json.dumps({"excerpts": [[{"source": payload["evidence"][0]["source"], "quote": original}]],
+                           "question_covered": True, "follow_up_query": ""})
+
+    monkeypatch.setattr(workflow, "_request_annual_model", model)
+    response = client.post("/api/annual-reports/analyze", json={"question": "2024年海外业务收入是多少？",
+                            "document_ids": [selected], "mode": "bm25"})
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["status"] == "complete", result["metrics"]["evidence_gaps"]
+    assert result["metrics"]["retrieval_strategy"] == "agentic_planned"
+    assert original in result["answer"] and result["metrics"]["fact_count"] == 0
+    assert result["calculations"] == []
+    assert other not in str(result)
 
 
 @pytest.mark.parametrize(

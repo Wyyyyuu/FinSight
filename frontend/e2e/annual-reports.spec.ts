@@ -135,6 +135,7 @@ test('labels synthetic data and preserves precise values and undefined growth ra
   await page.getByRole('button', { name: '载入示例资料' }).click();
   await expect(page.getByRole('status')).toContainText('人工合成示例');
   await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(2);
+  await expect(page.getByLabel('你想核对什么？')).toHaveValue('2024 年营业收入同比增长了多少？');
   await page.getByRole('button', { name: '分析所选资料' }).click();
   await expect(page.getByRole('table')).toContainText('-0.123456789');
   await expect(page.getByRole('table')).toContainText('不计算（基期非正）');
