@@ -1798,7 +1798,7 @@ async def route_conversation(
 - research：需要行情、新闻、公司/宏观/组合/文档证据或工具执行。
 - alert：用户要设置提醒/预警/触发条件。
 - clarify：无法安全绑定上下文或缺少必要对象。
-- out_of_scope：当前请求不是金融投研任务，也不需要工具或 planner。开放闲聊、生活娱乐、身份边界类问题应由直接回复层自然回答或说明边界；不要为了非金融请求构造研究计划。
+- out_of_scope：请求完全超出金融投研范围，例如娱乐推荐或生活服务。设置 needs_tools=false、task_hints=[]，由应用返回固定拒绝文案。
 - 对“你是谁/你能做什么/怎么用”等能力或身份问题，用 direct_answer，不要进入 planner。
 - 如果用户问“那它呢/第二点/继续/展开/刚才那个”，优先从 recent_history、last_report、active_symbol、selection 找 context_binding。
 - recent_focuses/last_focus 属于用户级长期记忆，只能做背景参考，不能在没有当前线程 recent_history 时拿来绑定“它/第二点”。
@@ -1893,8 +1893,6 @@ def _fallback_direct_reply(decision: ConversationDecision, state: GraphState) ->
     last_report = _compact_last_report(memory_context)
     subject_hint = str(decision.context_binding.subject_hint or "").strip()
 
-    if decision.execution_route == "out_of_scope":
-        return "这个问题不太属于金融投研范围。你可以把它转成市场、行业或相关公司的问题，我再接着分析。"
     if decision.context_binding.source == "last_report" and last_report:
         title = str(last_report.get("title") or "刚才那份报告").strip()
         summary = str(last_report.get("summary") or "").strip()
@@ -1915,7 +1913,10 @@ async def generate_contextual_reply(
     state: GraphState,
     decision: ConversationDecision,
 ) -> str:
-    """Generate a natural direct-answer reply."""
+    """Return a fixed scope refusal or generate a direct-answer reply."""
+    if decision.execution_route == "out_of_scope":
+        return "FinSight 仅处理金融投研问题。你可以询问股票、公司、财报、行业或市场。"
+
     timeout_sec = max(
         2.0,
         apply_preferred_timeout(
@@ -1935,7 +1936,6 @@ async def generate_contextual_reply(
 - context_binding 表示用户接的是哪个上下文；不是只有报告才有追问。
 - 如果 context_binding.source=last_report，基于 last_report 接着聊；可以引用报告标题、摘要、风险，但不要假装重新跑了实时数据。
 - 如果 domain_intent=finance_concept，用清楚自然的解释，必要时给一个简单例子；不要要求用户先给 ticker。
-- 如果 out_of_scope，直接用金融助手身份简短说明不能做该非金融请求，可以自然给一个转成金融视角的方向；不要列模板标题。
 - 如果用户要求保证收益、确定性涨跌或“必涨/稳赚标的”，不要承诺结果，不要假装能预测；自然说明边界，并转成“候选池 + 可验证证据 + 风险控制”的分析方式。
 - 如果 relation=correct，简短确认用户纠正后的对象，之后按纠正后的对象继续；不要要求用户重复确认已经明确的 ticker。
 - 如果用户是省略式追问，优先结合 recent_history 和 context_binding 推断对象与动作；上下文足够时直接回答、计算、改写或展开，不要让用户重复对象。

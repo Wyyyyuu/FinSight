@@ -21,7 +21,8 @@ graph TD
     chat_respond -->|pure social| END_CASUAL([END: 纯社交短路])
     chat_respond -->|all other turns| understand_request
     understand_request --> router_decision{LLM conversation router}
-    router_decision -->|direct_answer/out_of_scope| END_CHAT([END: 自然回复])
+    router_decision -->|direct_answer| END_CHAT([END: 自然回复])
+    router_decision -->|out_of_scope| END_SCOPE([END: 固定拒绝])
     router_decision -->|clarify| END_CLARIFY([END: 澄清])
     router_decision -->|research/alert/URL fetch| understand_projection[task projection]
     understand_projection -->|direct/clarify| END_CHAT
@@ -222,7 +223,8 @@ graph TD
 - `route=research` → `policy_gate`
 
 **Planner 前 gate**:
-- `direct_answer` / `out_of_scope`：直接由 LLM 生成自然对话回复，不进入 planner。
+- `direct_answer`：由 LLM 生成自然对话回复，随后结束本轮。
+- `out_of_scope`：返回固定的投研边界文案，在 `policy_gate` 和 `planner` 前结束本轮。
 - `research`：投影成 ready task，进入 `policy_gate -> planner`。
 - `clarify`：缺少必要上下文时结束并提示补充。
 - `no news/no links/direct answer` 纠偏会写入 `reply_contract.source_constraints.disallow_news=true`，后续 policy/planner 必须遵守。

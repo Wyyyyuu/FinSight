@@ -442,8 +442,9 @@ def _direct_conversation_result(
     memory_context: dict[str, Any] | None = None,
     request_frame: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    reply = _sanitize_direct_chat_reply(reply)
-    reply = _ensure_direct_reply_names_bound_tickers(reply, decision=decision, query=query)
+    if decision.execution_route != "out_of_scope":
+        reply = _sanitize_direct_chat_reply(reply)
+        reply = _ensure_direct_reply_names_bound_tickers(reply, decision=decision, query=query)
     artifacts["draft_markdown"] = reply
     artifacts["conversation_decision"] = decision.model_dump()
     understanding = {
@@ -1712,6 +1713,8 @@ def _direct_decision_must_project_tasks(
     request_frame: dict[str, Any] | None = None,
 ) -> bool:
     """Prevent an LLM direct route from swallowing explicit tool/data requests."""
+    if decision.execution_route == "out_of_scope":
+        return False
     if _request_frame_blocks_direct_answer(request_frame):
         return True
     if wants_no_news_or_links(query):

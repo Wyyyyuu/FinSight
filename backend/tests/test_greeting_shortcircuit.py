@@ -108,15 +108,14 @@ class TestGreetingShortCircuit:
             )
 
         async def fake_reply(_state, _decision):
-            if "歌" in query:
-                return "我不太适合推荐歌曲，但可以把音乐平台或版权公司的变化转成投资视角来聊。"
             return "我是 FinSight，可以自然聊天，也可以在需要行情、新闻或报告证据时再进入研究流程。"
 
         understand_mod = importlib.import_module("backend.graph.nodes.understand_request")
 
         monkeypatch.setenv("FINSIGHT_CONTEXT_ROUTER_ENABLED", "true")
         monkeypatch.setattr(understand_mod, "route_conversation", fake_route)
-        monkeypatch.setattr(understand_mod, "generate_contextual_reply", fake_reply)
+        if "歌" not in query:
+            monkeypatch.setattr(understand_mod, "generate_contextual_reply", fake_reply)
 
         result = _run(
             GraphRunner.create().ainvoke(
@@ -128,7 +127,7 @@ class TestGreetingShortCircuit:
 
         assert result.get("chat_responded") is True
         md = (result.get("artifacts") or {}).get("draft_markdown", "")
-        assert "FinSight" in md or "投资视角" in md
+        assert "FinSight" in md
 
         nodes = [s.get("node") for s in (result.get("trace") or {}).get("spans") or []]
         assert "chat_respond" in nodes

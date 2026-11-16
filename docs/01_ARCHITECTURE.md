@@ -91,7 +91,7 @@ flowchart TD
 
 `understand_request` 是聊天前半段的语义事实源，一次性处理：
 
-- 纯寒暄由 `chat_respond` 快速结束；其他直接回复、非金融边界和澄清由 LLM conversation router 自然生成，不走本地模板。
+- 纯寒暄由 `chat_respond` 快速结束。LLM conversation router 判断本轮路径；判为 `out_of_scope` 时，应用返回固定拒绝文案并在规划前结束本轮。
 - 公司、ticker、中文别名、index、commodity、macro、theme、selection、portfolio。
 - URL/网页/文章任务作为可规划的 `fetch_url_content` 工具步骤进入执行层。
 - 复合请求拆成 `tasks[]`，例如 `company/GOOGL/price` + `company/MSFT/fetch` + `macro/fact_check`。

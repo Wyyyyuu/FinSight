@@ -95,6 +95,13 @@ def _build_graph(*, checkpointer: Any) -> Any:
     def _route_after_understand_request(state: GraphState) -> str:
         understanding = state.get("understanding") or {}
         route = str(understanding.get("route") or "").strip().lower()
+        decision = (state.get("artifacts") or {}).get("conversation_decision")
+        if (
+            route == "direct"
+            and isinstance(decision, dict)
+            and decision.get("execution_route") == "out_of_scope"
+        ):
+            return END
         op = (state.get("operation") or {}).get("name", "qa")
         if route == "alert" or op == "alert_set":
             return "alert_extractor"

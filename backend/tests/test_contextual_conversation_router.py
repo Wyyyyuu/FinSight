@@ -4,6 +4,8 @@ from __future__ import annotations
 import asyncio
 import importlib
 
+import pytest
+
 
 def _run(coro):
     return asyncio.run(coro)
@@ -1956,7 +1958,11 @@ def test_policy_and_planner_prompt_expose_url_fetch_tool_for_mixed_query():
     assert "不要只根据 URL 字面内容臆测文章结论" in prompt
 
 
-def test_non_financial_open_chat_is_llm_direct_before_planner(monkeypatch):
+@pytest.mark.parametrize(
+    ("ui_context", "needs_tools"),
+    [({"active_symbol": "TSLA"}, False), ({"agents_override": ["news_agent"]}, False), ({}, True)],
+)
+def test_out_of_scope_returns_fixed_refusal_before_execution(monkeypatch, ui_context, needs_tools):
     from backend.graph import GraphRunner
     from backend.graph.nodes.conversation_router import ContextBinding, ConversationDecision
 
@@ -1967,34 +1973,36 @@ def test_non_financial_open_chat_is_llm_direct_before_planner(monkeypatch):
         assert selection_ids == []
         return ConversationDecision(
             execution_route="out_of_scope",
-            context_binding=ContextBinding(),
+            context_binding=ContextBinding(subject_hint="AAPL, MSFT"),
             relation="new_topic",
             domain_intent="smalltalk",
             confidence=0.93,
-            needs_tools=False,
-            reason="非金融娱乐请求，直接用金融助手身份回答",
+            needs_tools=needs_tools,
+            reason="非金融娱乐请求",
         )
 
-    async def fake_reply(_state, decision):
-        assert decision.execution_route == "out_of_scope"
-        return "我不太适合推荐睡前歌曲；如果你想从投资角度看音乐流媒体或版权公司，我可以接着聊。"
+    def fail_reply_model(*_args, **_kwargs):
+        pytest.fail("An out-of-scope turn must use the fixed refusal")
 
     monkeypatch.setenv("FINSIGHT_CONTEXT_ROUTER_ENABLED", "true")
     monkeypatch.setattr(understand_mod, "route_conversation", fake_route)
-    monkeypatch.setattr(understand_mod, "generate_contextual_reply", fake_reply)
+    monkeypatch.setattr("backend.llm_config.create_llm", fail_reply_model)
 
     result = _run(
         GraphRunner.create().ainvoke(
             thread_id="tenant1:test:open-chat-direct",
             query="推荐一首适合睡前听的歌。",
-            ui_context={},
+            ui_context=ui_context,
             output_mode="chat",
         )
     )
 
     assert result["chat_responded"] is True
     assert result["understanding"]["route"] == "direct"
-    assert "睡前歌曲" in result["artifacts"]["draft_markdown"]
+    assert result["artifacts"]["draft_markdown"] == "FinSight 仅处理金融投研问题。你可以询问股票、公司、财报、行业或市场。"
+    assert result["artifacts"]["conversation_decision"]["execution_route"] == "out_of_scope"
+    assert result["tasks"] == []
+    assert result["skip_session_context"] is True
     nodes = [s.get("node") for s in (result.get("trace") or {}).get("spans") or []]
     assert "understand_request" in nodes
     assert "policy_gate" not in nodes
